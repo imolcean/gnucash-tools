@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page(#{accounts.title}, ~{::main})}">
+<body>
+<main class="container">
+    <div class="tree-head">
+        <h1 th:text="#{accounts.title}">Accounts</h1>
+        <a class="small" th:href="@{/accounts(hideZero=${!hideZero})}"
+           th:text="${hideZero} ? #{accounts.showZero} : #{accounts.hideZero}">Show zero balances</a>
+    </div>
+    <div class="tree">
+        <th:block th:replace="~{accounts :: nodes(${tree})}"></th:block>
+    </div>
+</main>
+
+<!--/* A placeholder's name expands it; any other name opens its register; ▸ expands any account with children. */-->
+<th:block th:fragment="nodes(nodes)">
+    <th:block th:each="row : ${nodes}">
+        <details th:if="${!row.children().isEmpty()}" th:open="${!row.trading()}" th:data-path="${row.path()}">
+            <summary class="acct">
+                <th:block th:replace="~{accounts :: line(${row}, true)}"></th:block>
+            </summary>
+            <div class="kids">
+                <th:block th:replace="~{accounts :: nodes(${row.children()})}"></th:block>
+            </div>
+        </details>
+        <div th:if="${row.children().isEmpty()}" class="acct" th:data-path="${row.path()}">
+            <th:block th:replace="~{accounts :: line(${row}, false)}"></th:block>
+        </div>
+    </th:block>
+</th:block>
+
+<th:block th:fragment="line(row, expandable)">
+    <span class="twisty" aria-hidden="true" th:text="${expandable} ? '▸' : ''"></span>
+    <span class="name ellipsis">
+        <span th:if="${row.placeholder()}" class="placeholder-name" th:text="${row.name()}">Expenses</span>
+        <a th:unless="${row.placeholder()}" th:href="@{/accounts/{guid}(guid=${row.guid()})}"
+           th:text="${row.name()}">Cash</a>
+    </span>
+    <span class="num">
+        <span th:if="${row.total()}" th:classappend="${row.negative()} ? 'neg'" th:text="${row.total()}">1 585.00 €</span>
+        <span th:unless="${row.total()}" class="muted" th:text="#{accounts.noPrice}">no price</span>
+        <span th:if="${row.own()}" class="own" th:text="#{accounts.own(${row.own()})}">own 10.00 €</span>
+    </span>
+</th:block>
+</body>
+</html>

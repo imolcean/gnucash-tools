@@ -1,0 +1,60 @@
+# gnucash-togo next to an existing PostgreSQL stack that holds the GnuCash book.
+# Paste into OMV (Compose > Files) and set the variables in its .env, see README.md "Deploy".
+#
+# db-init runs once per `up`: it creates the app's least-privilege role if missing, (re)sets its password and
+# grants exactly what the app needs (ADR-0006). Running it again changes nothing else.
+
+services:
+  db-init:
+    image: postgres:17.11
+    restart: "no"
+    environment:
+      # Superuser (or the book's owner) that may create roles and grant on the book.
+      PGHOST: ${GNUCASH_DB_HOST}
+      PGPORT: ${GNUCASH_DB_PORT:-5432}
+      PGUSER: ${GNUCASH_DB_ADMIN_USER}
+      PGPASSWORD: ${GNUCASH_DB_ADMIN_PASSWORD}
+      PGDATABASE: ${GNUCASH_DB_NAME}
+      TOGO_DB_USER: ${TOGO_DB_USER:-togo}
+      TOGO_DB_PASSWORD: ${TOGO_DB_PASSWORD}
+    # $$ hands a literal $ to the shell, which reads the variables above.
+    entrypoint:
+      - sh
+      - -c
+      - |
+        psql -v ON_ERROR_STOP=1 -v role="$$TOGO_DB_USER" -v password="$$TOGO_DB_PASSWORD" -v db="$$PGDATABASE" <<'SQL'
+        SELECT format('CREATE ROLE %I LOGIN', :'role')
+          WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'role') \gexec
+        ALTER ROLE :"role" WITH LOGIN PASSWORD :'password';
+        GRANT CONNECT ON DATABASE :"db" TO :"role";
+        GRANT USAGE ON SCHEMA public TO :"role";
+        GRANT SELECT ON ALL TABLES IN SCHEMA public TO :"role";
+        GRANT INSERT, UPDATE, DELETE ON transactions, splits, slots TO :"role";
+        GRANT USAGE ON SEQUENCE slots_id_seq TO :"role";
+        GRANT DELETE ON gnclock TO :"role";
+        SQL
+    networks: [db]
+
+  app:
+    # latest = the newest green build of master; every start pulls it.
+    image: ghcr.io/imolcean/fincore-gnucash-togo:latest
+    pull_policy: always
+    restart: unless-stopped
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    ports:
+      - "8302:8080"
+    environment:
+      # Decides what "today" and "future" mean for balances and the register.
+      TZ: ${TZ:-Europe/Berlin}
+      GNUCASH_DB_HOST: ${GNUCASH_DB_HOST}
+      GNUCASH_DB_PORT: ${GNUCASH_DB_PORT:-5432}
+      GNUCASH_DB_NAME: ${GNUCASH_DB_NAME}
+    networks: [db]
+
+networks:
+  db:
+    external: true
+    # The network of the existing PostgreSQL stack, as `docker network ls` shows it.
+    name: ${GNUCASH_DB_NETWORK}

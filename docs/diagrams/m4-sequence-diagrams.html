@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M4 Sequence Diagrams</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1f2328; --muted: #59636e; --border: #d1d9e0; --code-bg: #f6f8fa; --link: #0969da;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --border: #3d444d; --code-bg: #151b23; --link: #4493f8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --border: #3d444d; --code-bg: #151b23; --link: #4493f8;
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  /* Text column; diagrams break out of it to the full window width (.diagram) */
+  main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h2 { font-size: 1.25rem; margin: 32px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1rem; margin: 20px 0 6px; }
+  p, li { color: var(--fg); }
+  .lead { color: var(--muted); margin-top: 0; }
+  code { font: 0.85em ui-monospace, Consolas, monospace; background: var(--code-bg); padding: 1px 4px; border-radius: 4px; }
+  a { color: var(--link); }
+  /* Full window width, outside the text column */
+  .diagram { width: calc(100vw - 32px); position: relative; left: 50%; transform: translateX(-50%);
+             box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--bg); }
+  .diagram pre.mermaid { margin: 0; background: none; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  th, td { text-align: left; vertical-align: top; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; }
+  .tablewrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main>
+<h1>M4 sequence diagrams</h1>
+<p class="lead">gnucash-togo, milestone M4. Sources: <code>gnucash-togo/src/main/java/org/duckdns/gory26/gnucash/togo/</code>.</p>
+
+<h2 id="session-lifecycle">Session lifecycle</h2>
+<p>A login opens a <code>Session</code>: the user's own Hikari pool (max 2 connections, none kept idle) built with their
+Postgres username and password, wrapped in a <code>GnuCashBook</code>. The <code>Session</code> is the Spring Security
+principal, so it lives in the HTTP session, which never expires (<code>server.servlet.session.timeout=-1</code>).
+The pool closes on logout, when the HTTP session is destroyed, or when the app stops
+(<a href="../adr/0006-passthrough-auth-least-privilege-role.md">ADR-0006</a>).</p>
+
+<div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor U as Phone browser
+  participant SS as Spring Security
+  participant BAP as BookAuthenticationProvider
+  participant Ss as Sessions
+  participant S as Session + pool
+  participant C as Controller
+  participant SC as SessionCloser
+  participant PG as Postgres
+
+  rect rgba(127,127,127,0.08)
+  Note over U,PG: Login
+  U->>SS: POST /login (username, password)
+  SS->>BAP: authenticate(token)
+  alt DB host or name not configured
+    BAP-->>SS: AuthenticationServiceException
+  else configured
+    BAP->>Ss: open(username, password)
+    Ss->>S: new HikariDataSource(config)
+    S->>PG: connect as username (once, at pool build)
+    alt Postgres accepts
+      PG-->>S: connection
+      Ss->>Ss: open.add(session)
+      Ss-->>BAP: Session
+      BAP-->>SS: authenticated(principal = Session, no password)
+      SS->>SS: new session id, store SecurityContext in HttpSession
+      SS-->>U: 302 / + session cookie
+    else SQLSTATE 28xxx (wrong password, unknown role)
+      PG-->>S: refused
+      S-->>BAP: PoolInitializationException
+      BAP-->>SS: BadCredentialsException
+      SS-->>U: 302 /login?error → "wrong username or password"
+    else any other failure
+      BAP-->>SS: AuthenticationServiceException (cause logged)
+      SS-->>U: 302 /login?error → "cannot reach the book"
+    end
+  end
+  end
+
+  rect rgba(127,127,127,0.08)
+  Note over U,PG: Each request while logged in
+  U->>SS: GET /accounts (cookie)
+  SS->>SS: load SecurityContext from HttpSession
+  SS->>C: @AuthenticationPrincipal Session
+  C->>S: book().lock(), schemaStatus() (BannerAdvice)
+  C->>S: book().accountTree()
+  S->>PG: borrow or open a connection, query
+  PG-->>S: rows
+  C-->>U: HTML page
+  end
+
+  rect rgba(127,127,127,0.08)
+  Note over U,PG: End of the session
+  alt Logout
+    U->>SS: POST /logout
+    SS->>SC: logout(authentication)
+    SC->>Ss: close(session)
+    Ss->>Ss: open.remove(session)
+    Ss->>S: close()
+    S->>PG: close connections
+    SS->>SS: invalidate HttpSession, clear context
+    SS-->>U: 302 /login?logout
+  else HttpSession destroyed (invalidated by the container)
+    SS->>SC: HttpSessionDestroyedEvent (via HttpSessionEventPublisher)
+    SC->>Ss: close(session) for each SecurityContext
+    Ss->>S: close()
+    S->>PG: close connections
+  else App stops
+    Ss->>Ss: @PreDestroy closeAll()
+    Ss->>S: close() for every open Session
+    S->>PG: close connections
+  end
+  Note over BAP,PG: Closing twice is harmless: remove() is a no-op and Hikari ignores a second close()
+  end
+</pre>
+</div>
+
+<h3>Where in the code</h3>
+<div class="tablewrap">
+<table>
+<tr><th>Step</th><th>Source</th></tr>
+<tr><td>Login form, logout handler, URL rules</td><td><code>config/SecurityConfig.java:18-33</code></td></tr>
+<tr><td>Destroyed-session events published</td><td><code>config/SecurityConfig.java:39-42</code></td></tr>
+<tr><td>Not configured check</td><td><code>session/BookAuthenticationProvider.java:37-39</code></td></tr>
+<tr><td>Open the Session, return principal without password</td><td><code>session/BookAuthenticationProvider.java:43-44</code></td></tr>
+<tr><td>Refused vs unreachable (SQLSTATE class 28)</td><td><code>session/BookAuthenticationProvider.java:45-52</code>, <code>:55-63</code></td></tr>
+<tr><td>Pool config: size 2, min idle 0, connect at build</td><td><code>session/Sessions.java:41-56</code></td></tr>
+<tr><td>Login error message on the page</td><td><code>web/LoginController.java:15-25</code></td></tr>
+<tr><td>Principal used per request</td><td><code>web/BannerAdvice.java:20-30</code>, <code>web/AccountsController.java:32-37</code></td></tr>
+<tr><td>Close on logout and on destroyed session</td><td><code>session/SessionCloser.java:24-39</code></td></tr>
+<tr><td>Close one / close all at shutdown</td><td><code>session/Sessions.java:58-71</code>, <code>session/Session.java:35-37</code></td></tr>
+<tr><td>Sessions never expire</td><td><code>gnucash-togo/src/main/resources/application.properties</code> (<code>server.servlet.session.timeout=-1</code>)</td></tr>
+</table>
+</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script>
+  const dark = document.documentElement.dataset.theme === "dark" ||
+    (document.documentElement.dataset.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: dark ? "dark" : "default",
+    themeVariables: { fontSize: "18px" },
+    sequence: {
+      mirrorActors: false,
+      useMaxWidth: true,             // scale down to fit the frame
+      actorFontSize: 18, messageFontSize: 17, noteFontSize: 17,
+      actorMargin: 24, width: 150, messageMargin: 44, boxMargin: 10
+    }
+  });
+</script>
+</body>
+</html>

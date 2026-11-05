@@ -1,0 +1,90 @@
+/* gnucash-togo on top of Pico; register styles follow variant B of prototype/register-prototype.html */
+
+main.container { padding-top: .5rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+nav.app { padding: 0 .5rem; border-bottom: 1px solid var(--pico-muted-border-color); }
+nav.app ul { margin: 0; }
+nav.app form.logout { margin: 0; }
+nav.app form.logout button { padding: .25rem .6rem; font-size: .85rem; margin: 0; }
+.login { max-width: 24rem; }
+
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.neg { color: var(--pico-del-color); }
+.muted { color: var(--pico-muted-color); }
+.small { font-size: .8rem; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; display: block; }
+.chip { display: inline-block; font-size: .7rem; line-height: 1.2; padding: .1rem .4rem; margin-right: .25rem;
+        border-radius: 1rem; background: var(--pico-secondary-background); color: var(--pico-secondary-inverse);
+        vertical-align: middle; }
+.alert { padding: .6rem .8rem; border-radius: var(--pico-border-radius);
+         background: color-mix(in srgb, var(--pico-del-color) 15%, transparent); }
+
+/* banners */
+.banners { padding-top: .5rem; }
+.banner { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between;
+          padding: .6rem .8rem; margin: 0 0 .5rem; border-radius: var(--pico-border-radius); background: color-mix(in srgb, var(--pico-del-color) 15%, transparent); }
+.banner button { margin: 0; padding: .25rem .75rem; font-size: .85rem; }
+.banner details { width: 100%; margin: 0; font-size: .8rem; }
+
+/* account tree */
+.tree-head { display: flex; justify-content: space-between; align-items: baseline; margin: .75rem 0; }
+.tree-head h1 { font-size: 1.15rem; margin: 0; }
+.tree details { margin: 0; padding: 0; border: 0; }
+/* undo Pico's accordion look: same line height, colour and spacing as leaf rows */
+.tree details > summary { list-style: none; line-height: inherit; color: inherit; margin: 0; }
+.tree details[open] > summary, .tree details[open] > summary:not([role]):not(:focus) { margin-bottom: 0; color: inherit; }
+.tree details > summary::-webkit-details-marker { display: none; }
+.tree details > summary::after { display: none; }
+.tree .acct { display: flex; gap: .4rem; align-items: baseline; padding: .45rem .25rem;
+              border-bottom: 1px solid var(--pico-muted-border-color); }
+.tree .twisty { width: 1rem; flex: none; color: var(--pico-muted-color); cursor: pointer; transition: transform .1s; display: inline-block; }
+.tree details[open] > summary .twisty { transform: rotate(90deg); }
+.tree .name { flex: 1; min-width: 0; }
+.tree .name a { text-decoration: none; }
+.tree .own { display: block; font-size: .75rem; color: var(--pico-muted-color); }
+.tree .kids { padding-left: 1rem; }
+.tree .placeholder-name { cursor: pointer; }
+
+/* register: grouped by day (variant B) */
+.acct-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; margin: .75rem 0; }
+.acct-head h1 { font-size: 1.15rem; margin: 0; min-width: 0; }
+.acct-head .bal { font-weight: 700; font-size: 1.15rem; }
+.future { opacity: .5; }
+.rec { display: inline-block; width: 1.1rem; text-align: center; font-size: .7rem; border-radius: .2rem;
+       border: 1px solid var(--pico-muted-border-color); color: var(--pico-muted-color); }
+.rec.y { background: var(--pico-ins-color); color: #fff; border-color: transparent; }
+.rec.c { border-color: var(--pico-ins-color); color: var(--pico-ins-color); }
+.rec.f { background: var(--pico-muted-color); color: #fff; border-color: transparent; }
+.lock { font-size: .7rem; }
+.lock.editable { visibility: hidden; }
+.loadmore { width: 100%; margin-top: 1rem; }
+.day { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; padding: .35rem .25rem;
+       background: var(--pico-card-sectioning-background-color); font-size: .8rem; font-weight: 600;
+       border-radius: .25rem; margin-top: .75rem; }
+.item { display: flex; gap: .6rem; align-items: center; padding: .5rem .25rem;
+        border-bottom: 1px solid var(--pico-muted-border-color); color: inherit; text-decoration: none; }
+a.item:active { background: var(--pico-secondary-background); }
+.item .body { flex: 1; min-width: 0; }
+.item .amt { font-weight: 600; }
+.item .side { display: flex; flex-direction: column; align-items: flex-end; gap: .15rem; }
+.item .marks { display: flex; gap: .3rem; align-items: center; }
+
+/* entry form */
+.entry .row { display: flex; gap: .5rem; align-items: flex-end; }
+.entry .row > * { flex: 1; }
+.entry .row > button { flex: none; width: auto; }
+.picker { position: relative; }
+.suggestions { list-style: none; padding: 0; margin: -.5rem 0 .75rem; border: 1px solid var(--pico-muted-border-color);
+               border-radius: var(--pico-border-radius); max-height: 18rem; overflow-y: auto; }
+.suggestions:empty { display: none; }
+.suggestions li { list-style: none; margin: 0; padding: 0; }
+.suggestions button { all: unset; box-sizing: border-box; display: block; width: 100%; padding: .45rem .6rem; cursor: pointer;
+                      border-bottom: 1px solid var(--pico-muted-border-color); }
+.suggestions button:hover, .suggestions button:focus { background: var(--pico-secondary-background); color: var(--pico-secondary-inverse); }
+.chips { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; margin-bottom: .4rem; }
+.chips:empty { display: none; }
+.chips .chip { font-size: .85rem; padding: .2rem .5rem; }
+.chips .chip button { all: unset; cursor: pointer; margin-left: .3rem; font-weight: 700; }
+.field-error { display: block; margin-top: -.5rem; margin-bottom: .75rem; color: var(--pico-del-color); font-size: .85rem; }
+.saved { color: var(--pico-ins-color); animation: fade 6s forwards; }
+@keyframes fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--/* Suggestion lists, swapped into a picker's <ul class="suggestions">. */-->
+
+<th:block th:fragment="tags">
+    <li th:each="tag : ${tags}">
+        <button type="button" th:data-tag="${tag}" th:text="${tag}">Tag 1</button>
+    </li>
+</th:block>
+
+<!--/* Picking a description posts the whole form back, quick-filled from its latest use. */-->
+<th:block th:fragment="descriptions">
+    <li th:each="text : ${descriptions}">
+        <button type="button" name="pick" th:value="${text}" hx-post="/entry/quickfill"
+                hx-target="#entry-form" hx-swap="outerHTML" th:text="${text}">Rewe</button>
+    </li>
+</th:block>
+
+<th:block th:fragment="accounts">
+    <li th:each="choice : ${choices}">
+        <button type="button" name="pick" th:value="|${field}:${choice.guid()}|" hx-post="/entry/pick"
+                hx-target="#entry-form" hx-swap="outerHTML">
+            <span th:text="${choice.path()}">Assets:Cash</span> <small class="muted" th:text="${choice.currency()}">€</small>
+        </button>
+    </li>
+    <!--/* Typing after a pick un-picks it, so the save can't use a GUID the box no longer shows. */-->
+    <input th:if="${unpick}" type="hidden" th:id="|${field}-guid|" th:name="${field}" value="" hx-swap-oob="true">
+</th:block>
+
+<th:block th:fragment="none"></th:block>
+
+<input th:fragment="today" type="date" name="date" id="date" required th:value="${today}">
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page(#{login.title}, ~{::main})}">
+<body>
+<main class="container login">
+    <h1 th:text="#{app.name}">gnucash-togo</h1>
+    <p class="muted" th:text="#{login.intro}">Log in with your book's database user.</p>
+    <p role="alert" class="alert" th:if="${error}">
+        <span th:text="#{${error}}">Wrong user or password.</span>
+    </p>
+    <p class="muted" th:if="${loggedOut}" th:text="#{login.loggedOut}">Logged out.</p>
+    <p role="alert" class="alert" th:if="${refused}" th:text="#{login.refused}">The book no longer accepts your login.</p>
+    <form method="post" th:action="@{/login}">
+        <label><span th:text="#{login.username}">User</span>
+            <input name="username" autocomplete="username" autocapitalize="none" required autofocus>
+        </label>
+        <label><span th:text="#{login.password}">Password</span>
+            <input name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit" th:text="#{login.submit}">Log in</button>
+    </form>
+</main>
+</body>
+</html>

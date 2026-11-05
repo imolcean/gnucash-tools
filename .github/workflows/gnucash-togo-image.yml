@@ -1,0 +1,78 @@
+name: gnucash-togo image
+
+# Tests the repository and publishes the gnucash-togo Docker image to GitHub Container Registry:
+#   ghcr.io/<owner>/fincore-gnucash-togo:latest      (every push to master)
+#   ghcr.io/<owner>/fincore-gnucash-togo:sha-<short> (every push to master)
+#   ghcr.io/<owner>/fincore-gnucash-togo:1.2.3       (tag gnucash-togo/v1.2.3)
+
+on:
+  push:
+    branches: [master]
+    tags: ['gnucash-togo/v*']
+    # Not evaluated for tag pushes: a release tag always builds.
+    paths: &paths
+      - 'gnucash-book/**'
+      - 'gnucash-togo/**'
+      - 'pom.xml'
+      - '.mvn/**'
+      - '.github/workflows/gnucash-togo-image.yml'
+  pull_request:
+    branches: [master]
+    paths: *paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # All modules, including the Testcontainers tests against postgres:17.11 (Docker is on the runner).
+      - name: Run tests
+        run: ./mvnw -B verify
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/fincore-gnucash-togo
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,enable={{is_default_branch}}
+            type=match,pattern=gnucash-togo/v(\d+\.\d+\.\d+),group=1
+            type=ref,event=pr
+
+      - name: Build and push image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: gnucash-togo/Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

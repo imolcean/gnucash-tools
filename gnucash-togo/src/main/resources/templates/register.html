@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page(${account.name()}, ~{::main})}">
+<body>
+<main class="container">
+    <div class="acct-head">
+        <h1 class="ellipsis"><span class="muted small" th:text="${parentPath}">Assets:</span><span
+                th:text="${account.name()}">Cash</span></h1>
+        <span class="bal num" th:classappend="${presentNegative} ? 'neg'" th:text="${present}">1 585.00 €</span>
+    </div>
+    <div id="register">
+        <th:block th:replace="~{register :: days}"></th:block>
+    </div>
+    <th:block th:replace="~{register :: loadMore}"></th:block>
+    <p class="muted" th:if="${days.isEmpty()}" th:text="#{register.empty}">No entries yet.</p>
+</main>
+
+<!--/* Rows are flat siblings of their sticky day header, so appended pages continue the same list. */-->
+<th:block th:fragment="days">
+    <th:block th:each="day : ${days}">
+        <div class="day" th:if="${day.header()}" th:classappend="${day.future()} ? 'future'">
+            <span th:text="${day.weekday() + ' ' + day.date()} + (${day.future()} ? ' · ' + #{register.future} : '')">Wed 04.11.2026</span>
+            <span class="num" th:text="${day.balance()}">1 585.00 €</span>
+        </div>
+        <th:block th:each="item : ${day.items()}">
+            <a th:if="${item.editable()}" class="item" th:classappend="${item.future()} ? 'future'"
+               th:href="@{/transactions/{tx}/edit(tx=${item.txGuid()}, returnTo='/accounts/' + ${guid})}">
+                <th:block th:replace="~{register :: item(${item})}"></th:block>
+            </a>
+            <div th:unless="${item.editable()}" class="item" th:classappend="${item.future()} ? 'future'">
+                <th:block th:replace="~{register :: item(${item})}"></th:block>
+            </div>
+        </th:block>
+    </th:block>
+</th:block>
+
+<th:block th:fragment="item(item)">
+    <span class="body">
+        <span class="ellipsis"><span class="chip" th:each="tag : ${item.tags()}" th:text="${tag}">Tag 1</span><span
+                th:text="${item.text()}">Rewe</span></span>
+        <span class="small muted ellipsis" th:title="${item.otherFull()}"
+              th:text="${item.other()} + (${item.notes().isEmpty()} ? '' : ' · ' + ${item.notes()})">Groceries</span>
+    </span>
+    <span class="side">
+        <span class="amt num" th:classappend="${item.negative()} ? 'neg'" th:text="${item.amount()}">−12.34 €</span>
+        <span class="marks">
+            <span class="rec" th:classappend="${item.reconcile()}" th:title="#{'register.reconcile.' + ${item.reconcile()}}"
+                  th:text="${item.reconcile()}">n</span>
+            <span class="lock" th:classappend="${item.editable()} ? 'editable'" th:title="#{register.desktopOnly}">🔒</span>
+        </span>
+    </span>
+</th:block>
+
+<div th:fragment="loadMore" id="load-more" th:hx-swap-oob="${more} ? 'true'">
+    <button th:if="${next}" type="button" class="secondary outline loadmore"
+            th:hx-get="@{/accounts/{guid}/rows(guid=${guid}, after=${next}, lastDate=${lastDate})}"
+            hx-target="#register" hx-swap="beforeend" th:text="#{register.loadMore}">Load more</button>
+</div>
+
+<th:block th:fragment="more">
+    <th:block th:replace="~{register :: days}"></th:block>
+    <th:block th:replace="~{register :: loadMore}"></th:block>
+</th:block>
+</body>
+</html>

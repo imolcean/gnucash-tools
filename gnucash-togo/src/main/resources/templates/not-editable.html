@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page(#{edit.title}, ~{::main})}">
+<body>
+<main class="container">
+    <h1 th:text="#{edit.title}">Edit entry</h1>
+    <p role="alert" class="alert" th:text="#{edit.notEditable}">This transaction is left to desktop.</p>
+    <a role="button" class="secondary outline" th:href="${returnTo}" th:text="#{entry.back}">Back</a>
+</main>
+</body>
+</html>

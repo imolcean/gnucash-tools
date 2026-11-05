@@ -1,0 +1,8 @@
+# Used by BuildKit for gnucash-togo/Dockerfile (the context is the repository root).
+**/target/
+.git/
+.idea/
+.github/
+docs/
+gnucash-togo/prototypes/
+gnucash-togo/docs/

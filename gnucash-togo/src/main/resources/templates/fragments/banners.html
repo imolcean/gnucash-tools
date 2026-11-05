@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="banners" id="banners" class="container banners">
+    <div class="banner unreachable" role="alert" th:if="${unreachable}" th:text="#{banner.unreachable}">Cannot reach the book. Try again in a moment.</div>
+    <div class="banner lock" role="alert" th:if="${lock != null}">
+        <span th:text="#{banner.locked(${lock.hostname}, '' + ${lock.pid})}">Locked by Leopard (PID 8300)</span>
+        <button type="button" class="secondary"
+                th:hx-post="@{/lock/clear}"
+                th:hx-confirm="#{banner.clearLock.confirm(${lock.hostname}, '' + ${lock.pid})}"
+                th:text="#{banner.clearLock}">Clear lock</button>
+    </div>
+    <div class="banner schema" role="alert" th:if="${schema != null and !schema.known()}">
+        <span th:text="#{banner.unknownSchema}">Unknown schema: read-only</span>
+        <details>
+            <summary th:text="#{banner.unknownSchema.details}">Details</summary>
+            <ul><li th:each="difference : ${schema.differences()}" th:text="${difference}"></li></ul>
+        </details>
+    </div>
+</div>
+</body>
+</html>

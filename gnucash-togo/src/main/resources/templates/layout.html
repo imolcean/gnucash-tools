@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="page(title, content)">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title th:text="|${title} · #{app.name}|">gnucash-togo</title>
+    <link rel="stylesheet" th:href="@{/webjars/picocss__pico/css/pico.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="manifest" th:href="@{/manifest.webmanifest}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/icons/icon.svg}">
+    <link rel="icon" type="image/png" sizes="32x32" th:href="@{/icons/favicon-32.png}">
+    <link rel="apple-touch-icon" th:href="@{/icons/apple-touch-icon.png}">
+    <meta name="theme-color" content="#2e7d32">
+    <script th:src="@{/webjars/htmx.org/dist/htmx.min.js}" defer></script>
+</head>
+<!-- htmx sends the CSRF token with every request it makes (ADR-0006). -->
+<body th:hx-headers='|{"${_csrf.headerName}": "${_csrf.token}"}|'>
+<nav class="app" th:if="${user != null}" th:with="here=${path}">
+    <ul><li><strong th:text="#{app.name}">gnucash-togo</strong></li></ul>
+    <ul>
+        <li><a th:href="@{/}" th:attr="aria-current=${here == '/' ? 'page' : null}" th:text="#{nav.entry}">Entry</a></li>
+        <li><a th:href="@{/accounts}" th:attr="aria-current=${here.startsWith('/accounts') ? 'page' : null}" th:text="#{nav.accounts}">Accounts</a></li>
+        <li>
+            <form method="post" th:action="@{/logout}" class="logout">
+                <button type="submit" class="secondary outline" th:text="#{nav.logout}">Log out</button>
+            </form>
+        </li>
+    </ul>
+</nav>
+<div th:replace="~{fragments/banners :: banners}"></div>
+<th:block th:replace="${content}"></th:block>
+</body>
+</html>

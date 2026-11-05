@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "togo.register.page-size",
+      "type": "java.lang.Integer",
+      "description": "Rows per page in an account's register; \"Load more\" fetches the next page.",
+      "defaultValue": 50
+    }
+  ]
+}

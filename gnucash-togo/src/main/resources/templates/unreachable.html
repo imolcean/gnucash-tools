@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page(#{unreachable.title}, ~{::main})}">
+<body>
+<!--/* The banner above already says what happened; this page only offers to try again. */-->
+<main class="container">
+    <a role="button" th:href="${retry}" th:text="#{unreachable.retry}">Try again</a>
+</main>
+</body>
+</html>
