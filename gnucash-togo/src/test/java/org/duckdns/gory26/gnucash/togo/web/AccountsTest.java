@@ -33,11 +33,11 @@ class AccountsTest extends AppTest {
     }
 
     @Test
-    void tradingStartsCollapsedAndEverythingElseOpen() throws Exception {
-        String page = accounts(login(), "");
+    void everyAccountStartsCollapsed() throws Exception {
+        String page = accounts(login(), "?hideZero=false");
 
-        assertThat(page).contains("<details data-path=\"Trading\">");
-        assertThat(page).contains("<details data-path=\"Assets\" open=\"open\">");
+        assertThat(page).contains("<details data-path=\"Trading\">").contains("<details data-path=\"Assets\">")
+                .contains("<details data-path=\"Expenses:Food\">").doesNotContain("open=\"open\"");
     }
 
     @Test

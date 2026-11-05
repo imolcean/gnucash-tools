@@ -13,10 +13,10 @@
     </div>
 </main>
 
-<!--/* A placeholder's name expands it; any other name opens its register; ▸ expands any account with children. */-->
+<!--/* Every account starts collapsed. A placeholder's name expands it; any other name opens its register; ▸ expands any account with children. */-->
 <th:block th:fragment="nodes(nodes)">
     <th:block th:each="row : ${nodes}">
-        <details th:if="${!row.children().isEmpty()}" th:open="${!row.trading()}" th:data-path="${row.path()}">
+        <details th:if="${!row.children().isEmpty()}" th:data-path="${row.path()}">
             <summary class="acct">
                 <th:block th:replace="~{accounts :: line(${row}, true)}"></th:block>
             </summary>

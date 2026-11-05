@@ -43,7 +43,7 @@ class AccountsController {
      *
      * @param own the account's own balance, shown only when it is not zero and differs from the total; or null
      */
-    record Row(String guid, String name, String path, boolean placeholder, boolean trading,
+    record Row(String guid, String name, String path, boolean placeholder,
                String total, boolean negative, String own, List<Row> children) {
     }
 
@@ -63,7 +63,7 @@ class AccountsController {
         }
         GncNumeric own = node.displayBalance();
         boolean showOwn = !own.isZero() && (total.isEmpty() || total.get().compareTo(own) != 0);
-        return Optional.of(new Row(node.guid(), node.name(), node.path(), node.placeholder(), node.trading(),
+        return Optional.of(new Row(node.guid(), node.name(), node.path(), node.placeholder(),
                 total.map(t -> fmt.amount(t, node.commodity())).orElse(null),
                 total.map(t -> t.signum() < 0).orElse(false),
                 showOwn ? fmt.amount(own, node.commodity()) : null,

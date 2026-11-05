@@ -145,7 +145,7 @@ Decisions from the M4 grilling (2026-11-04) are folded in below.
   2. `/accounts`: the tree, built from `<details>`:
      - each row shows `displayTotal`, or "no price" when it's empty, plus the account's own balance only when it is not zero and differs;
      - hide-zero is on by default, applied **on the server** (`/accounts?hideZero=…`) and remembered in the session, so the tag-chip script stays the only hand-written JS (changed at implementation, 2026-11-04);
-     - Trading starts collapsed;
+     - every account starts collapsed, Trading included (changed 2026-11-05);
      - tapping a **placeholder's** name expands its children; tapping any other account's name opens its register; the ▸ expands any account with children.
   3. `/accounts/{guid}`: the register, built as **variant B** of `../../gnucash-togo/prototypes` (the visual spec):
      - rows are grouped by day under sticky headers showing the weekday, `dd.MM.yyyy` and the end-of-day balance (the balance after that day's newest row); future days are dimmed and marked "future";
