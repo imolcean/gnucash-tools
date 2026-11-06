@@ -2,6 +2,11 @@ package org.duckdns.gory26.gnucash.togo.session;
 
 import org.duckdns.gory26.gnucash.togo.AppTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.logging.LogLevel;
+import org.springframework.boot.logging.LoggingSystem;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockHttpSession;
@@ -20,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** ADR-0006: passthrough login, one pool per session, closed when the session ends. */
+@ExtendWith(OutputCaptureExtension.class)
 class LoginTest extends AppTest {
 
     @Autowired
@@ -41,6 +47,29 @@ class LoginTest extends AppTest {
                 .andExpect(unauthenticated());
 
         assertThat(sessions.openCount()).isZero();
+    }
+
+    @Test
+    void aLoginLogsOneLineWithTheDeviceAndPool(CapturedOutput output) throws Exception {
+        // The shared logback-test.xml shows WARN and up; this line is INFO, as it is in production.
+        LoggingSystem logging = LoggingSystem.get(getClass().getClassLoader());
+        String logger = BookAuthenticationProvider.class.getName();
+        logging.setLogLevel(logger, LogLevel.INFO);
+        try {
+            mvc.perform(formLogin("/login").user(ROLE).password(PASSWORD)).andExpect(authenticated());
+        } finally {
+            logging.setLogLevel(logger, null);
+        }
+
+        assertThat(output.getOut()).containsPattern("Login ok: " + ROLE + " from 127\\.0\\.0\\.1, pool book-\\d+");
+    }
+
+    @Test
+    void aWrongPasswordLogsOneLineWithoutAStackTrace(CapturedOutput output) throws Exception {
+        mvc.perform(formLogin("/login").user(ROLE).password("wrong")).andExpect(unauthenticated());
+
+        assertThat(output.getOut()).contains("Login refused: " + ROLE + " from 127.0.0.1")
+                .doesNotContain("PSQLException").doesNotContain("\tat ");
     }
 
     @Test

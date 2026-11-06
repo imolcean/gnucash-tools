@@ -10,6 +10,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -38,17 +39,28 @@ public class BookAuthenticationProvider implements AuthenticationProvider {
         }
         String username = login.getName();
         String password = String.valueOf(login.getCredentials());
+        String from = clientAddress(login);
+        // One line per login, never a stack trace: the message says enough.
         try {
             Session session = sessions.open(username, password);
+            log.info("Login ok: {} from {}, pool {}", username, from, session.poolName());
             return UsernamePasswordAuthenticationToken.authenticated(session, null, List.of());
         } catch (PoolInitializationException e) {
             if (BookFailure.of(e) == BookFailure.LOGIN_REFUSED) {
+                log.warn("Login refused: {} from {}", username, from);
                 throw new BadCredentialsException("Postgres refused the login", e);
             }
             // The cause stays in the server log; the login page only says the book can't be reached.
-            log.warn("Cannot reach the book for {}: {}", username, e.getMessage());
+            log.warn("Login failed, cannot reach the book: {} from {}: {}", username, from, e.getMessage());
             throw new AuthenticationServiceException("Cannot reach the book", e);
         }
+    }
+
+    /** The device's IP, which the form login filter puts into the authentication's details. */
+    private static String clientAddress(Authentication login) {
+        return login.getDetails() instanceof WebAuthenticationDetails details && details.getRemoteAddress() != null
+                ? details.getRemoteAddress()
+                : "unknown";
     }
 
     @Override

@@ -20,7 +20,7 @@ Work happens in **milestones** on branch `gnucash-togo`. After each one: run `./
 - 0003 Exact amounts: integer rationals, no float or double, and **no rounding**: input more precise than the commodity fraction is rejected.
 - 0004 Desktop lock: refuse writes while `gnclock` has rows, re-check inside the same DB transaction, and a Clear-lock button behind a confirmation naming the host and PID.
 - 0005 Schema `versions` check: an unknown set puts the app in read-only mode with a banner.
-- 0006 Auth: passthrough login to a dedicated least-privilege PG role; sessions in server memory that never expire.
+- 0006 Auth: passthrough login to a dedicated least-privilege PG role; sessions in server memory, a 365-day cookie, ending after 90 days unused (changed 2026-11-06).
 - 0007 Write fidelity: rows must match what GnuCash desktop 5.16 writes, enforced by golden tests against the sample book.
 - 0008 Balances: Present = `post_date` ≤ today. Hidden subtrees are left out of display but counted in totals. Mixed currencies are converted with the latest price, as desktop does. The Trading tree is shown collapsed.
 - 0009 Tags: descriptions carry a `[A] [B] text` prefix. The UI edits tags as chips and stores them in the description text.
@@ -123,7 +123,7 @@ Decisions from the M4 grilling (2026-11-04) are folded in below.
 - **Stack:** Spring Boot 4.1.2 web, Thymeleaf, Spring Security and Actuator. WebJars `org.webjars.npm:htmx.org:2.0.11` and `org.webjars.npm:picocss__pico:2.1.1`, with `org.webjars:webjars-locator-lite` (version from Boot), so paths carry no versions. These coordinates were checked on Maven Central on 2026-11-04.
   - **htmx 2, not 4.** 4.0.x is GA but changes inheritance, error swapping and events. Use plain `hx-headers` on `<body>`.
 - **DB settings:** `GNUCASH_DB_HOST`, `GNUCASH_DB_PORT` (default 5432) and `GNUCASH_DB_NAME`, bound to `togo.db.*`. The login supplies the user and password. A `Clock` bean in the system zone (`TZ`) drives "today".
-- **Auth:** a custom `AuthenticationProvider` opens a test connection with the login's username and password. A per-session Hikari pool (max 2) sits in a server-side registry with one `GnuCashBook` per pool, and is closed on logout or session destroy. `server.servlet.session.timeout=-1` means sessions never expire. CSRF stays on, and htmx sends the token through `hx-headers` on `<body>`.
+- **Auth:** a custom `AuthenticationProvider` opens a test connection with the login's username and password. A per-session Hikari pool (max 2) sits in a server-side registry with one `GnuCashBook` per pool, and is closed on logout or session destroy. The session cookie lasts 365 days and a session unused for 90 days ends (was `timeout=-1`, changed 2026-11-06, see ADR-0006). CSRF stays on, and htmx sends the token through `hx-headers` on `<body>`.
 - **Formats:**
   - amounts `1 585.00 €`: narrow no-break space (U+202F) for thousands, a dot for decimals, a no-break space, then the symbol (`€`, `$`, falling back to the mnemonic);
   - negatives use U+2212 `−`;

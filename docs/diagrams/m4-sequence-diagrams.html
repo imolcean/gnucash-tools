@@ -135,15 +135,114 @@ sequenceDiagram
 <tr><th>Step</th><th>Source</th></tr>
 <tr><td>Login form, logout handler, URL rules</td><td><code>config/SecurityConfig.java:18-33</code></td></tr>
 <tr><td>Destroyed-session events published</td><td><code>config/SecurityConfig.java:39-42</code></td></tr>
-<tr><td>Not configured check</td><td><code>session/BookAuthenticationProvider.java:37-39</code></td></tr>
-<tr><td>Open the Session, return principal without password</td><td><code>session/BookAuthenticationProvider.java:43-44</code></td></tr>
-<tr><td>Refused vs unreachable (SQLSTATE class 28)</td><td><code>session/BookAuthenticationProvider.java:45-52</code>, <code>:55-63</code></td></tr>
-<tr><td>Pool config: size 2, min idle 0, connect at build</td><td><code>session/Sessions.java:41-56</code></td></tr>
-<tr><td>Login error message on the page</td><td><code>web/LoginController.java:15-25</code></td></tr>
+<tr><td>Not configured check</td><td><code>session/BookAuthenticationProvider.java:36-38</code></td></tr>
+<tr><td>Open the Session, return principal without password</td><td><code>session/BookAuthenticationProvider.java:42-43</code></td></tr>
+<tr><td>Refused vs unreachable (SQLSTATE class 28)</td><td><code>session/BookAuthenticationProvider.java:44-51</code>, <code>session/BookFailure.java:21-33</code></td></tr>
+<tr><td>Pool config: size 2, min idle 0, connect at build</td><td><code>session/Sessions.java:45-65</code></td></tr>
+<tr><td>Login error message on the page</td><td><code>web/LoginController.java:15-26</code></td></tr>
 <tr><td>Principal used per request</td><td><code>web/BannerAdvice.java:20-30</code>, <code>web/AccountsController.java:32-37</code></td></tr>
 <tr><td>Close on logout and on destroyed session</td><td><code>session/SessionCloser.java:24-39</code></td></tr>
-<tr><td>Close one / close all at shutdown</td><td><code>session/Sessions.java:58-71</code>, <code>session/Session.java:35-37</code></td></tr>
+<tr><td>Close one / close all at shutdown</td><td><code>session/Sessions.java:67-79</code>, <code>session/Session.java:35-37</code></td></tr>
 <tr><td>Sessions never expire</td><td><code>gnucash-togo/src/main/resources/application.properties</code> (<code>server.servlet.session.timeout=-1</code>)</td></tr>
+</table>
+</div>
+
+<h2 id="login-logout-pools">Login, logout and connection pools</h2>
+<p>Each login gets its own Hikari pool named <code>book-N</code>, opened with the user's Postgres login. The pool
+holds at most 2 connections and keeps none idle for long: after a minute without use it holds no connection, and
+the next request reconnects with the login stored inside the pool. Logout closes the pool. Spring Security then
+invalidates the HTTP session, which asks <code>SessionCloser</code> to close the same pool a second time; that
+call does nothing.</p>
+
+<div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor U as Phone browser
+  participant SS as Spring Security
+  participant SC as SessionCloser
+  participant BAP as BookAuthenticationProvider
+  participant Ss as Sessions
+  participant P as Hikari pool book-N
+  participant PG as Postgres
+
+  rect rgba(127,127,127,0.08)
+  Note over U,PG: Login
+  U->>SS: POST /login (username, password)
+  SS->>BAP: authenticate(token)
+  BAP->>Ss: open(username, password)
+  Note over BAP,P: max 2 connections, min idle 0, idle timeout 1 min, connection timeout 5 s, fail fast
+  Ss->>P: new HikariDataSource(config)
+  P->>PG: open a connection as username
+  alt Postgres accepts
+    PG-->>P: connection (stays idle in the pool)
+    Ss->>Ss: open.add(session)
+    Ss-->>BAP: Session(username, pool, GnuCashBook)
+    BAP-->>SS: authenticated, principal = Session
+    SS->>SS: change session id, save SecurityContext in HttpSession
+    SS-->>U: 302 /
+  else SQLSTATE 28 (wrong password, unknown role)
+    PG-->>P: authentication failed
+    P->>P: stop housekeeping thread
+    P-->>BAP: PoolInitializationException (nothing registered)
+    BAP-->>SS: BadCredentialsException
+    SS-->>U: 302 /login?error → "wrong username or password"
+  else Postgres unreachable
+    P->>P: stop housekeeping thread
+    P-->>BAP: PoolInitializationException (nothing registered)
+    BAP-->>SS: AuthenticationServiceException
+    SS-->>U: 302 /login?error → "cannot reach the book"
+  end
+  end
+
+  rect rgba(127,127,127,0.08)
+  Note over U,PG: While logged in
+  loop Each request
+    P->>PG: borrow a connection (reuse an idle one or open a new one, max 2)
+  end
+  P->>PG: housekeeping closes connections idle for over 1 min
+  Note over Ss,PG: Pool now holds 0 connections. The next request reconnects with the stored login
+  end
+
+  rect rgba(127,127,127,0.08)
+  Note over U,PG: Logout
+  U->>SS: POST /logout
+  SS->>SC: logout(authentication), our handler runs first
+  SC->>Ss: close(session)
+  Ss->>Ss: open.remove(session)
+  Ss->>P: close()
+  P->>PG: close its connections, if any
+  SS->>SS: SecurityContextLogoutHandler: invalidate HttpSession
+  SS->>SC: HttpSessionDestroyedEvent (login not cleared yet)
+  SC->>Ss: close(session) again
+  Ss->>P: close(): already shut down, does nothing
+  SS->>SS: clear SecurityContext
+  SS-->>U: 302 /login?logout
+  end
+
+  rect rgba(127,127,127,0.08)
+  Note over U,PG: Login again without logging out
+  U->>SS: POST /login (same browser, still logged in)
+  SS->>Ss: authenticate → open() → new pool book-M
+  SS->>SS: replace SecurityContext in HttpSession
+  Note over BAP,PG: The old pool gets no logout or destroy event, so it stays in open until the app stops.<br/>Its connections time out after 1 min, so it holds none.
+  end
+</pre>
+</div>
+
+<h3>Where in the code</h3>
+<div class="tablewrap">
+<table>
+<tr><th>Step</th><th>Source</th></tr>
+<tr><td>Pool settings and fail-fast first connection</td><td><code>session/Sessions.java:45-65</code></td></tr>
+<tr><td>Connection timeout, default 5 s</td><td><code>config/TogoDbProperties.java:12-17</code></td></tr>
+<tr><td>Refused vs unreachable</td><td><code>session/BookAuthenticationProvider.java:44-51</code>, <code>session/BookFailure.java:21-33</code></td></tr>
+<tr><td>Logout handler added; destroyed-session events published</td><td><code>config/SecurityConfig.java:32</code>, <code>:39-42</code></td></tr>
+<tr><td>Close on logout and on destroyed session</td><td><code>session/SessionCloser.java:24-39</code></td></tr>
+<tr><td>Remove from registry and close the pool</td><td><code>session/Sessions.java:67-70</code>, <code>session/Session.java:35-37</code></td></tr>
+<tr><td>Handler order: ours first, then Spring's <code>SecurityContextLogoutHandler</code></td><td>Spring Security 7.1.2 <code>LogoutConfigurer.createLogoutFilter</code> (checked in the jar)</td></tr>
+<tr><td>Invalidate the session before clearing the login</td><td>Spring Security 7.1.2 <code>SecurityContextLogoutHandler.logout</code> (checked in the jar)</td></tr>
+<tr><td>Failed pool stops its housekeeping thread</td><td>HikariCP 7.0.2 <code>HikariPool.throwPoolInitializationException</code> (checked in the jar)</td></tr>
 </table>
 </div>
 </main>
