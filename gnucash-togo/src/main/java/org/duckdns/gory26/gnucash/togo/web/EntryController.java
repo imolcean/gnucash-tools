@@ -79,17 +79,22 @@ class EntryController {
 
     // ---------------------------------------------------------------- pickers
 
+    /** Items in a suggestion list: few enough to fit on a phone above its keyboard, with no scroll bar. */
+    static final int SHOWN = 4;
+
     @GetMapping("/suggest/tags")
     String tags(@AuthenticationPrincipal Session session, @RequestParam(defaultValue = "") String tag,
                 @RequestParam(defaultValue = "") List<String> tags, Model model) {
-        model.addAttribute("tags", session.book().suggestTags(tag).stream().filter(t -> !tags.contains(t)).toList());
+        model.addAttribute("tags", session.book().suggestTags(tag).stream()
+                .filter(t -> !tags.contains(t)).limit(SHOWN).toList());
         return "fragments/suggestions :: tags";
     }
 
     @GetMapping("/suggest/descriptions")
     String descriptions(@AuthenticationPrincipal Session session, @RequestParam(defaultValue = "") String text,
                         Model model) {
-        model.addAttribute("descriptions", text.isBlank() ? List.of() : session.book().suggestDescriptions(text));
+        model.addAttribute("descriptions",
+                text.isBlank() ? List.of() : session.book().suggestDescriptions(text).stream().limit(SHOWN).toList());
         return "fragments/suggestions :: descriptions";
     }
 
@@ -111,7 +116,7 @@ class EntryController {
         boolean stillPicked = !picked.isBlank()
                 && session.book().account(picked).map(a -> a.path().equals(typed.strip())).orElse(false);
         model.addAttribute("field", field);
-        model.addAttribute("choices", choices.stream()
+        model.addAttribute("choices", choices.stream().limit(SHOWN)
                 .map(c -> new Choice(c.guid(), c.path(), fmt.symbol(c.commodity())))
                 .toList());
         model.addAttribute("unpick", !stillPicked && !picked.isBlank());
@@ -197,7 +202,7 @@ class EntryController {
     }
 
     /** A picked account: {@code pick} is {@code from:GUID} or {@code to:GUID}. */
-    @PostMapping("/entry/pick")
+    @PostMapping(path = "/entry/pick", params = "pick")
     String pick(@AuthenticationPrincipal Session session, @ModelAttribute("form") EntryForm form,
                 @RequestParam String pick, Model model) {
         String[] parts = pick.split(":", 2);
@@ -209,5 +214,29 @@ class EntryController {
             form.setToLabel("");
         }
         return view.fragment(form, session.book(), model, Map.of());
+    }
+
+    /**
+     * Enter in a picker: the first account its list offers for the typed text, as if tapped; with none, the box
+     * empties. The server looks it up, as the list on screen may still be for an earlier text.
+     *
+     * @param first {@code from} or {@code to}
+     */
+    @PostMapping(path = "/entry/pick", params = "first")
+    String pickFirst(@AuthenticationPrincipal Session session, @ModelAttribute("form") EntryForm form,
+                     @RequestParam String first, Model model) {
+        GnuCashBook book = session.book();
+        if (first.equals("from")) {
+            form.setFrom(firstMatch(book, form.getFromLabel()));
+            form.setFromLabel("");
+        } else if (first.equals("to")) {
+            form.setTo(firstMatch(book, form.getToLabel()));
+            form.setToLabel("");
+        }
+        return view.fragment(form, book, model, Map.of());
+    }
+
+    private static String firstMatch(GnuCashBook book, String typed) {
+        return typed.isBlank() ? "" : book.suggestAccounts(typed).stream().findFirst().map(AccountChoice::guid).orElse("");
     }
 }

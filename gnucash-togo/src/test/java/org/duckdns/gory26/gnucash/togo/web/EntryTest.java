@@ -217,6 +217,14 @@ class EntryTest extends AppTest {
         assertThat(suggestions).contains("Assets:Cash").doesNotContain(">Expenses:Food<").doesNotContain("Trading");
     }
 
+    /** The list opens over the fields below it with no scroll bar, so it holds only what fits on a phone. */
+    @Test
+    void aSuggestionListHoldsFourItems() throws Exception {
+        String suggestions = fragment(get("/suggest/accounts").param("field", "from").param("fromLabel", ""));
+
+        assertThat(Pattern.compile("<li>").matcher(suggestions).results().count()).isEqualTo(4);
+    }
+
     @Test
     void typingAfterAPickUnpicksTheAccount() throws Exception {
         String typing = fragment(get("/suggest/accounts").param("field", "from")
@@ -226,6 +234,29 @@ class EntryTest extends AppTest {
 
         assertThat(typing).contains("id=\"from-guid\" name=\"from\" value=\"\" hx-swap-oob=\"true\"");
         assertThat(unchanged).doesNotContain("hx-swap-oob");
+    }
+
+    /** entry-form.js finds the pickers by the marker; htmx refocuses the box after a pick by its id. */
+    @Test
+    void accountBoxesCarryAnIdAndThePickerItsMarker() throws Exception {
+        assertThat(page("/")).containsPattern("class=\"picker\" data-account-picker[^>]*>")
+                .contains("<input id=\"from-label\" name=\"fromLabel\"")
+                .contains("<input id=\"to-label\" name=\"toLabel\"");
+    }
+
+    @Test
+    void enterTakesTheFirstAccountTheListOffers() throws Exception {
+        String form = fragment(post("/entry/pick").param("first", "to").param("toLabel", "food groc"));
+
+        assertThat(form).contains("name=\"to\" value=\"" + SampleBook.GROCERIES + "\"")
+                .contains("value=\"Expenses:Food:Groceries\"");
+    }
+
+    @Test
+    void enterOnTextNoAccountMatchesEmptiesTheBox() throws Exception {
+        String form = fragment(post("/entry/pick").param("first", "from").param("fromLabel", "zzz"));
+
+        assertThat(form).contains("id=\"from-guid\" name=\"from\" value=\"\"").doesNotContain("value=\"zzz\"");
     }
 
     @Test

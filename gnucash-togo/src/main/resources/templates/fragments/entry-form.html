@@ -108,12 +108,16 @@
        hx-swap="outerHTML" hx-include="#from-guid" hx-vals='js:{done: event.type === "blur"}'
        hx-sync="closest form:abort" th:hx-swap-oob="${oob} ? 'true'">
 
-<!--/* One account picker: a search box, the picked GUID, and its suggestions. */-->
-<div th:fragment="picker(field, guid, label, currency)" class="picker"
+<!--/*
+  One account picker: a search box, the picked GUID, and its suggestions. Only a picked account stays: typing
+  un-picks, and leaving the picker with nothing picked empties the box (entry-form.js). The box's id lets htmx
+  give the focus back after a pick swaps the form.
+*/-->
+<div th:fragment="picker(field, guid, label, currency)" class="picker" data-account-picker
      hx-get="/suggest/none" hx-trigger="focusout delay:300ms" hx-swap="innerHTML" th:hx-target="'#' + ${field} + '-suggestions'">
     <label><svg th:replace="~{fragments/icon :: icon(${field == 'from'} ? 'arrow-up-from-line' : 'arrow-down-to-line')}"></svg><span
             th:text="#{${'entry.' + field}}">From</span> <small class="muted" th:text="${currency}">€</small>
-        <input th:name="|${field}Label|" autocomplete="off" th:value="${label}" th:placeholder="#{entry.account.placeholder}"
+        <input th:id="|${field}-label|" th:name="|${field}Label|" autocomplete="off" th:value="${label}" th:placeholder="#{entry.account.placeholder}"
                data-enter="next" enterkeyhint="next"
                th:aria-invalid="${errors.containsKey(field)} ? 'true'"
                th:hx-get="@{/suggest/accounts(field=${field})}" hx-trigger="input changed delay:250ms, focus"

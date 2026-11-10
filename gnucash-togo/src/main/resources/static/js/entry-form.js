@@ -1,7 +1,10 @@
 // The entry form's keyboard: the app's only hand-written script (docs/plans/gnucash-togo.md, M4).
 //
 // Phones have no Tab key, so Enter on a field marked data-enter="next" (date, from, to, amount) moves to the next
-// visible field instead of saving; Enter on the description saves as usual.
+// visible field instead of saving; Enter on the description saves as usual. Picking an account moves on the same way.
+//
+// An account box keeps only an account picked from its list: Enter takes the first suggestion, and typed text that
+// was never picked is emptied on leaving. The next box opens its list as soon as it gets the focus.
 //
 // The amount is typed as on a card terminal: digits only, the point stays data-decimals places from the right,
 // so 1, 2, 3 shows 0.01, 0.12, 1.23; Backspace takes the last digit off again. It also takes GnuCash's calculator
@@ -100,13 +103,67 @@
         field.dispatchEvent(new Event('input', {bubbles: true}));
     });
 
+    // The visible field after this one. offsetParent is null for fields inside a closed <details>: those are skipped.
+    function next(field) {
+        const fields = [...field.form.querySelectorAll('input:not([type=hidden]), textarea')]
+            .filter(f => !f.disabled && f.offsetParent !== null);
+        return fields[fields.indexOf(field) + 1];
+    }
+
+    // Account pickers take only an account from the list. Typing un-picks at once, so a GUID never outlives the
+    // text it was picked by; leaving the picker with nothing picked empties the box.
+    const box = picker => picker.querySelector('input:not([type=hidden])');
+    const guid = picker => picker.querySelector('input[type=hidden]');
+
     document.addEventListener('keydown', e => {
         if (e.key !== 'Enter' || e.isComposing || !e.target.matches('[data-enter=next]')) return;
         e.preventDefault();
-        // offsetParent is null for fields inside a closed <details>: those are skipped.
-        const fields = [...e.target.form.querySelectorAll('input:not([type=hidden]), textarea')]
-            .filter(f => !f.disabled && f.offsetParent !== null);
-        fields[fields.indexOf(e.target) + 1]?.focus();
+        const picker = e.target.closest('[data-account-picker]');
+        if (picker && e.target.value.trim() && !guid(picker).value) {
+            // Enter on typed text takes the first suggestion. The list on screen may be for an earlier text (typing
+            // waits 250 ms before asking), so the server looks it up; with no match it empties the box. The form is
+            // the source, so the post can't queue behind the box's own suggestion request.
+            picker.dataset.picking = ''; // leaving the box must not empty it before the answer
+            htmx.ajax('POST', '/entry/pick', {source: e.target.form, values: {first: guid(picker).name}});
+        }
+        next(e.target)?.focus();
+    });
+
+    // A pick swaps the form, and htmx gives the focus back to the next box before it wires that box up, so the
+    // box's own focus trigger misses: open its list here, as a tap on it would. Only after a form post: the list
+    // arriving settles too, and must not ask for itself again.
+    document.addEventListener('htmx:afterSettle', e => {
+        if (e.detail.requestConfig?.verb !== 'post') return;
+        const active = document.activeElement;
+        const picker = active?.closest('[data-account-picker]');
+        if (picker && active === box(picker)) htmx.trigger(active, 'focus');
+    });
+
+    document.addEventListener('input', e => {
+        const picker = e.target.closest('[data-account-picker]');
+        if (picker && e.target === box(picker)) guid(picker).value = '';
+    });
+
+    document.addEventListener('focusout', e => {
+        const picker = e.target.closest('[data-account-picker]');
+        if (picker && !picker.contains(e.relatedTarget) && !guid(picker).value && !('picking' in picker.dataset)) {
+            box(picker).value = '';
+        }
+    });
+
+    // A tapped suggestion keeps the box focused, as the operator strip does, then hands the focus to the next field
+    // while the finger is still down: the keyboard stays up. htmx swaps the form for the picked state and gives the
+    // focus back to that field by its id.
+    document.addEventListener('pointerdown', e => {
+        if (e.target.closest('[data-account-picker] .suggestions button')) e.preventDefault();
+    });
+
+    document.addEventListener('click', e => {
+        const pick = e.target.closest('[data-account-picker] .suggestions button');
+        if (!pick) return;
+        const picker = pick.closest('[data-account-picker]');
+        guid(picker).value = pick.value.split(':')[1]; // picked: leaving the box must not empty it
+        next(box(picker))?.focus();
     });
 
     document.addEventListener('keydown', e => {
