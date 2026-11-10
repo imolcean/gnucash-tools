@@ -3,7 +3,7 @@
       th:replace="~{layout :: page(#{login.title}, ~{::main})}">
 <body>
 <main class="container login">
-    <h1 th:text="#{app.name}">gnucash-togo</h1>
+    <h1 th:text="#{login.title}">Log in</h1>
     <p class="muted" th:text="#{login.intro}">Log in with your book's database user.</p>
     <p role="alert" class="alert" th:if="${error}">
         <span th:text="#{${error}}">Wrong user or password.</span>

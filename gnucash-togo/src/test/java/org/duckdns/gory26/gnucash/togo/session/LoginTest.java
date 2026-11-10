@@ -94,6 +94,14 @@ class LoginTest extends AppTest {
     }
 
     @Test
+    void theLoginPageCarriesTheAppHeaderWithoutTheMenu() throws Exception {
+        String page = mvc.perform(get("/login")).andReturn().getResponse().getContentAsString();
+
+        assertThat(page).contains("<nav class=\"app\">").contains("lucide.svg#tree-palm").contains(">Togo</span>")
+                .doesNotContain(">Accounts</a>").doesNotContain(">Log out</button>");
+    }
+
+    @Test
     void pagesNeedALogin() throws Exception {
         mvc.perform(get("/accounts")).andExpect(redirectedUrl("/login"));
     }
