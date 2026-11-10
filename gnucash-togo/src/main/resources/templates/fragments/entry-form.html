@@ -16,51 +16,72 @@
     <input type="hidden" name="txGuid" th:value="${form.txGuid}">
     <input type="hidden" name="returnTo" th:value="${form.returnTo}">
 
-    <div class="row">
-        <label><span th:text="#{entry.date}">Date</span>
-            <input type="date" name="date" id="date" required th:value="${form.date}"
-                   th:aria-invalid="${errors.containsKey('date')} ? 'true'">
-        </label>
+    <!--/*
+      Phones have no Tab key: Enter on a field marked data-enter="next" moves to the next field (entry-form.js);
+      Enter on the description saves, as in any form.
+    */-->
+    <label for="date"><svg th:replace="~{fragments/icon :: icon('calendar')}"></svg><span th:text="#{entry.date}">Date</span></label>
+    <div role="group">
+        <input type="date" name="date" id="date" required th:value="${form.date}" data-enter="next" enterkeyhint="next"
+               th:aria-invalid="${errors.containsKey('date')} ? 'true'">
         <button type="button" class="secondary outline" hx-get="/entry/today" hx-target="#date" hx-swap="outerHTML"
                 th:text="#{entry.today}">Today</button>
     </div>
     <small class="field-error" th:if="${errors.containsKey('date')}" th:text="#{${errors.date}}">Pick a date.</small>
 
-    <!--/* Tag chips: tags.js adds and removes them; each chip carries a hidden "tags" input. */-->
-    <label for="tag-input" th:text="#{entry.tags}">Tags</label>
-    <div class="chips" id="chips"><span class="chip" th:each="tag : ${form.tags}"><span th:text="${tag}">Tag 1</span><input
-            type="hidden" name="tags" th:value="${tag}"><button type="button" data-remove-tag
-            th:aria-label="#{entry.removeTag(${tag})}">×</button></span></div>
-    <div class="picker" hx-get="/suggest/none" hx-trigger="focusout delay:300ms" hx-swap="innerHTML" hx-target="#tag-suggestions">
-        <input id="tag-input" name="tag" autocomplete="off" autocapitalize="none" th:value="${form.tag}"
-               th:placeholder="#{entry.tags.placeholder}" th:aria-invalid="${errors.containsKey('tags')} ? 'true'"
-               hx-get="/suggest/tags" hx-trigger="input changed delay:250ms, focus" hx-target="#tag-suggestions"
-               hx-swap="innerHTML" hx-include="#chips">
-        <ul class="suggestions" id="tag-suggestions"></ul>
+    <th:block th:replace="~{fragments/entry-form :: picker('from', ${form.from}, ${form.fromLabel}, ${fromCurrency})}"></th:block>
+    <th:block th:replace="~{fragments/entry-form :: picker('to', ${form.to}, ${form.toLabel}, ${toCurrency})}"></th:block>
+
+    <!--/*
+      The amount takes GnuCash's calculator: 12.30 + 4.50. Phone keyboards have no operators, so a strip of them
+      shows while the field has focus; its buttons keep the focus (entry-form.js). /entry/amount shows the result
+      under the field and puts it in the field on leaving it.
+    */-->
+    <div class="amount">
+        <label for="amount"><svg th:replace="~{fragments/icon :: icon('coins')}"></svg><span th:text="#{entry.amount}">Amount</span>
+            <small class="muted" th:text="${fromCurrency}">€</small></label>
+        <th:block th:replace="~{fragments/entry-form :: amountInput(${form.amount}, ${errors.containsKey('amount')}, false)}"></th:block>
+        <output id="amount-result" for="amount"></output>
+        <div class="ops" role="group">
+            <button type="button" class="secondary" tabindex="-1" data-op="+" th:aria-label="#{entry.op.plus}">+</button>
+            <button type="button" class="secondary" tabindex="-1" data-op="−" th:aria-label="#{entry.op.minus}">−</button>
+            <button type="button" class="secondary" tabindex="-1" data-op="×" th:aria-label="#{entry.op.times}">×</button>
+            <button type="button" class="secondary" tabindex="-1" data-op="÷" th:aria-label="#{entry.op.divide}">÷</button>
+        </div>
     </div>
-    <small class="field-error" th:if="${errors.containsKey('tags')}" th:text="#{${errors.tags}}">No brackets.</small>
+    <small class="field-error" th:if="${errors.containsKey('amount')}" th:text="#{${errors.amount}}">Not a number.</small>
 
     <div class="picker" hx-get="/suggest/none" hx-trigger="focusout delay:300ms" hx-swap="innerHTML" hx-target="#text-suggestions">
-        <label><span th:text="#{entry.description}">Description</span>
-            <input name="text" autocomplete="off" th:value="${form.text}"
+        <label><svg th:replace="~{fragments/icon :: icon('pencil-line')}"></svg><span th:text="#{entry.description}">Description</span>
+            <input name="text" autocomplete="off" th:value="${form.text}" enterkeyhint="done"
                    hx-get="/suggest/descriptions" hx-trigger="input changed delay:250ms" hx-target="#text-suggestions"
                    hx-swap="innerHTML">
         </label>
         <ul class="suggestions" id="text-suggestions"></ul>
     </div>
 
-    <label><span th:text="#{entry.amount}">Amount</span> <small class="muted" th:text="${fromCurrency}">€</small>
-        <input name="amount" inputmode="decimal" autocomplete="off" th:value="${form.amount}"
-               th:aria-invalid="${errors.containsKey('amount')} ? 'true'">
-    </label>
-    <small class="field-error" th:if="${errors.containsKey('amount')}" th:text="#{${errors.amount}}">Not a number.</small>
-
-    <th:block th:replace="~{fragments/entry-form :: picker('from', ${form.from}, ${form.fromLabel}, ${fromCurrency})}"></th:block>
-    <th:block th:replace="~{fragments/entry-form :: picker('to', ${form.to}, ${form.toLabel}, ${toCurrency})}"></th:block>
+    <!--/* Tag chips: entry-form.js adds and removes them; each chip carries a hidden "tags" input. */-->
+    <details th:open="${!form.tags.isEmpty() || !form.tag.isEmpty() || errors.containsKey('tags')}">
+        <summary><svg th:replace="~{fragments/icon :: icon('tags')}"></svg><span th:text="#{entry.tags}">Tags</span></summary>
+        <div class="chips" id="chips"><span class="chip" th:each="tag : ${form.tags}"><span th:text="${tag}">Tag 1</span><input
+                type="hidden" name="tags" th:value="${tag}"><button type="button" data-remove-tag
+                th:aria-label="#{entry.removeTag(${tag})}">×</button></span></div>
+        <div class="picker" hx-get="/suggest/none" hx-trigger="focusout delay:300ms" hx-swap="innerHTML" hx-target="#tag-suggestions">
+            <label for="tag-input" class="sr-only" th:text="#{entry.tags}">Tags</label>
+            <input id="tag-input" name="tag" autocomplete="off" autocapitalize="none" th:value="${form.tag}"
+                   th:placeholder="#{entry.tags.placeholder}"
+                   th:aria-invalid="${errors.containsKey('tags')} ? 'true'"
+                   hx-get="/suggest/tags" hx-trigger="input changed delay:250ms, focus" hx-target="#tag-suggestions"
+                   hx-swap="innerHTML" hx-include="#chips">
+            <ul class="suggestions" id="tag-suggestions"></ul>
+        </div>
+        <small class="field-error" th:if="${errors.containsKey('tags')}" th:text="#{${errors.tags}}">No brackets.</small>
+    </details>
 
     <details th:open="${!form.notes.isEmpty()}">
-        <summary th:text="#{entry.notes}">Notes</summary>
-        <textarea name="notes" rows="2" th:aria-label="#{entry.notes}" th:text="${form.notes}"></textarea>
+        <summary><svg th:replace="~{fragments/icon :: icon('sticky-note')}"></svg><span th:text="#{entry.notes}">Notes</span></summary>
+        <label for="notes" class="sr-only" th:text="#{entry.notes}">Notes</label>
+        <textarea id="notes" name="notes" rows="2" th:text="${form.notes}"></textarea>
     </details>
 
     <button type="submit" th:disabled="${writable == false}" th:text="#{entry.save}">Save</button>
@@ -73,14 +94,30 @@
     </th:block>
 </form>
 
+<!--/*
+  The amount field, also swapped in out of band by /entry/amount. With fixed decimals (data-decimals) it is typed
+  as on a card terminal; a fraction that isn't a power of ten has none, so the amount is typed freely.
+  hx-sync drops a pending result request when the form is saved, so it can't land in the cleared form.
+*/-->
+<input th:fragment="amountInput(value, invalid, oob)" id="amount" name="amount" autocomplete="off"
+       th:inputmode="${fromDecimals >= 0} ? 'numeric' : 'decimal'"
+       th:placeholder="${fromDecimals > 0} ? '0.' + ${#strings.repeat('0', fromDecimals)} : (${fromDecimals == 0} ? '0')"
+       th:data-decimals="${fromDecimals >= 0} ? ${fromDecimals}"
+       th:value="${value}" data-enter="next" enterkeyhint="next" th:aria-invalid="${invalid} ? 'true'"
+       hx-get="/entry/amount" hx-trigger="input changed delay:150ms, blur" hx-target="#amount-result"
+       hx-swap="outerHTML" hx-include="#from-guid" hx-vals='js:{done: event.type === "blur"}'
+       hx-sync="closest form:abort" th:hx-swap-oob="${oob} ? 'true'">
+
 <!--/* One account picker: a search box, the picked GUID, and its suggestions. */-->
 <div th:fragment="picker(field, guid, label, currency)" class="picker"
-     hx-get="/suggest/none" hx-trigger="focusout delay:300ms" hx-swap="innerHTML" th:hx-target="|#${field}-suggestions|">
-    <label><span th:text="#{${'entry.' + field}}">From</span> <small class="muted" th:text="${currency}">€</small>
+     hx-get="/suggest/none" hx-trigger="focusout delay:300ms" hx-swap="innerHTML" th:hx-target="'#' + ${field} + '-suggestions'">
+    <label><svg th:replace="~{fragments/icon :: icon(${field == 'from'} ? 'arrow-up-from-line' : 'arrow-down-to-line')}"></svg><span
+            th:text="#{${'entry.' + field}}">From</span> <small class="muted" th:text="${currency}">€</small>
         <input th:name="|${field}Label|" autocomplete="off" th:value="${label}" th:placeholder="#{entry.account.placeholder}"
+               data-enter="next" enterkeyhint="next"
                th:aria-invalid="${errors.containsKey(field)} ? 'true'"
                th:hx-get="@{/suggest/accounts(field=${field})}" hx-trigger="input changed delay:250ms, focus"
-               th:hx-target="|#${field}-suggestions|" hx-swap="innerHTML" th:hx-include="|#${field}-guid|">
+               th:hx-target="'#' + ${field} + '-suggestions'" hx-swap="innerHTML" th:hx-include="'#' + ${field} + '-guid'">
     </label>
     <input type="hidden" th:id="|${field}-guid|" th:name="${field}" th:value="${guid}">
     <ul class="suggestions" th:id="|${field}-suggestions|"></ul>

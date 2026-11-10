@@ -7,6 +7,9 @@ nav.app ul { margin: 0; }
 nav.app form.logout { margin: 0; }
 nav.app form.logout button { padding: .25rem .6rem; font-size: .85rem; margin: 0; }
 .login { max-width: 24rem; }
+.icon { width: 1.1em; height: 1.1em; vertical-align: -.2em; margin-right: .4rem; flex: none; }
+nav.app .brand { display: inline-flex; align-items: center; color: var(--pico-primary); }
+nav.app .brand .icon { width: 1.5em; height: 1.5em; margin-right: .3rem; }
 
 .num { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 .neg { color: var(--pico-del-color); }
@@ -70,9 +73,17 @@ a.item:active { background: var(--pico-secondary-background); }
 .item .marks { display: flex; gap: .3rem; align-items: center; }
 
 /* entry form */
-.entry .row { display: flex; gap: .5rem; align-items: flex-end; }
-.entry .row > * { flex: 1; }
-.entry .row > button { flex: none; width: auto; }
+.entry [role=group] > button { flex: none; width: auto; }
+/* amount: the result line, and the operator strip while the field has focus */
+.amount { margin-bottom: var(--pico-spacing); }
+.amount input { margin-bottom: .25rem; }
+#amount-result { display: block; min-height: 1.2em; text-align: right; font-size: .9rem; color: var(--pico-muted-color);
+                 font-variant-numeric: tabular-nums; }
+#amount-result.error { color: var(--pico-del-color); }
+.amount .ops { display: none; grid-template-columns: repeat(4, 1fr); gap: .4rem; margin-top: .25rem; }
+.amount:focus-within .ops { display: grid; }
+.amount .ops button { margin: 0; padding: .45rem 0; font-size: 1.25rem; font-weight: 600; line-height: 1;
+                      touch-action: manipulation; }
 .picker { position: relative; }
 .suggestions { list-style: none; padding: 0; margin: -.5rem 0 .75rem; border: 1px solid var(--pico-muted-border-color);
                border-radius: var(--pico-border-radius); max-height: 18rem; overflow-y: auto; }

@@ -92,7 +92,7 @@ class EntryTest extends AppTest {
         String form = save(lunch("amount", "1.234"));
 
         assertThat(form).contains("Thousands or decimals? Write 1234 or 1.23.")
-                .containsPattern("name=\"amount\"[^>]*value=\"1[.]234\"\\s+aria-invalid=\"true\"")
+                .containsPattern("name=\"amount\"[^>]*value=\"1[.]234\"[^>]*aria-invalid=\"true\"")
                 .contains("value=\"Lunch\"");
     }
 
@@ -131,6 +131,68 @@ class EntryTest extends AppTest {
                 .contains("name=\"from\" value=\"" + SampleBook.CASH + "\"")
                 .contains("value=\"Expenses:Food:Groceries\"")
                 .contains("value=\"2026-11-04\"").contains(">kept</textarea>");
+    }
+
+    @Test
+    void labelsCarryTheirIconFromTheSprite() throws Exception {
+        assertThat(page("/")).contains("<use href=\"/icons/lucide.svg#calendar\"></use>")
+                .contains("<use href=\"/icons/lucide.svg#tree-palm\"></use>");
+    }
+
+    /** entry-form.js keeps the decimal point this many digits from the right: typing 1, 2, 3 shows 1.23. */
+    @Test
+    void theAmountIsTypedInTheFromAccountsSmallestUnit() throws Exception {
+        String form = fragment(post("/entry/pick").param("pick", "from:" + SampleBook.CASH));
+
+        assertThat(form).containsPattern("name=\"amount\"[^>]*inputmode=\"numeric\"[^>]*placeholder=\"0.00\"[^>]*data-decimals=\"2\"");
+    }
+
+    @Test
+    void anAmountCanBeASumAsOnDesktop() throws Exception {
+        assertThat(save(lunch("amount", "4.50 × 2 + 1.25"))).contains("Saved: [Tag 1] [Tag 2] Lunch · 10.25" + NBSP + "€");
+    }
+
+    @Test
+    void aDivisionByZeroIsAFieldErrorAndKeepsWhatWasTyped() throws Exception {
+        assertThat(save(lunch("amount", "12.00 ÷ 0"))).contains("Cannot divide by zero.").contains("value=\"12.00 ÷ 0\"");
+    }
+
+    @Test
+    void aSumBelowZeroIsRefused() throws Exception {
+        assertThat(save(lunch("amount", "1.00 − 2.00"))).contains("The amount must be more than zero.");
+    }
+
+    @Test
+    void theResultLineShowsTheRoundedResultWhileTyping() throws Exception {
+        String line = fragment(get("/entry/amount").param("amount", "10.00 ÷ 3").param("from", SampleBook.CASH));
+
+        assertThat(line).contains("= 3.33" + NBSP + "€").doesNotContain("hx-swap-oob");
+        assertThat(fragment(get("/entry/amount").param("amount", "12.30").param("from", SampleBook.CASH)))
+                .contains("<output id=\"amount-result\" for=\"amount\"></output>");
+        assertThat(fragment(get("/entry/amount").param("amount", "1 ÷ 0").param("from", SampleBook.CASH)))
+                .contains("class=\"error\"").contains("Cannot divide by zero.");
+    }
+
+    @Test
+    void leavingTheFieldPutsTheResultInIt() throws Exception {
+        String line = fragment(get("/entry/amount").param("amount", "12.30 + 4.50").param("from", SampleBook.CASH)
+                .param("done", "true"));
+
+        assertThat(line).contains("<output id=\"amount-result\" for=\"amount\"></output>")
+                .containsPattern("<input id=\"amount\"[^>]*value=\"16.80\"[^>]*hx-swap-oob=\"true\"");
+    }
+
+    /** From, to and amount come before the description, so quick-fill keeps what is already there. */
+    @Test
+    void quickFillFillsOnlyWhatIsStillEmpty() throws Exception {
+        String form = fragment(post("/entry/quickfill").param("pick", "Rewe").param("date", "2026-11-04")
+                .param("from", SampleBook.CHECKING).param("amount", "5").param("tags", "Mine"));
+
+        assertThat(form).contains("value=\"Rewe\"")
+                .contains("name=\"from\" value=\"" + SampleBook.CHECKING + "\"")
+                .contains("name=\"to\" value=\"" + SampleBook.GROCERIES + "\"")
+                .contains("value=\"5\"").doesNotContain("value=\"12.34\"")
+                .contains("value=\"Mine\"").doesNotContain("value=\"Tag 1\"");
     }
 
     @Test

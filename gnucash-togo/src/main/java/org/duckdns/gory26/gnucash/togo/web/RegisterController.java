@@ -85,10 +85,24 @@ class RegisterController {
 
     /**
      * @param other     the other account's last name, or {@code — split (n) —}
-     * @param otherFull the other accounts' full paths, for the tooltip
+     * @param otherFull    the other accounts' full paths, for the tooltip
+     * @param reconcileKey the message naming the reconcile state, for its tooltip; null for a state GnuCash doesn't have
      */
     record Item(String txGuid, boolean editable, boolean future, List<String> tags, String text, String other,
-                String otherFull, String notes, String amount, boolean negative, String reconcile) {
+                String otherFull, String notes, String amount, boolean negative, String reconcile,
+                String reconcileKey) {
+    }
+
+    /** GnuCash's reconcile states (n, c, y, f, v), each with its message. */
+    private static String reconcileKey(String state) {
+        return switch (state) {
+            case "n" -> "register.reconcile.n";
+            case "c" -> "register.reconcile.c";
+            case "y" -> "register.reconcile.y";
+            case "f" -> "register.reconcile.f";
+            case "v" -> "register.reconcile.v";
+            default -> null;
+        };
     }
 
     private void page(RegisterPage page, AccountSummary account, LocalDate continuing, boolean more, Model model) {
@@ -125,6 +139,6 @@ class RegisterController {
         GncNumeric amount = account.type().display(row.amount());
         return new Item(row.txGuid(), row.editable(), row.date().isAfter(today), description.tags(), description.text(),
                 other, String.join(", ", others), row.notes(), fmt.signed(amount, account.commodity()),
-                amount.signum() < 0, row.reconcileState());
+                amount.signum() < 0, row.reconcileState(), reconcileKey(row.reconcileState()));
     }
 }

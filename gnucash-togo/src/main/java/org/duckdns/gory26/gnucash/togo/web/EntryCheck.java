@@ -1,7 +1,7 @@
 package org.duckdns.gory26.gnucash.togo.web;
 
 import org.duckdns.gory26.gnucash.book.AccountSummary;
-import org.duckdns.gory26.gnucash.book.AmountParser;
+import org.duckdns.gory26.gnucash.book.AmountExpression;
 import org.duckdns.gory26.gnucash.book.GncNumeric;
 import org.duckdns.gory26.gnucash.book.GnuCashBook;
 import org.duckdns.gory26.gnucash.book.InvalidAmountException;
@@ -57,14 +57,14 @@ record EntryCheck(Optional<TransferDraft> draft, Map<String, String> errors,
             errors.put("amount", "entry.error.amount.missing");
         } else {
             try {
-                BigDecimal parsed = AmountParser.parse(form.getAmount(), fraction);
-                if (parsed.signum() == 0) {
+                BigDecimal parsed = AmountExpression.evaluate(form.getAmount(), fraction);
+                if (parsed.signum() <= 0) {
                     errors.put("amount", "entry.error.amount.zero");
                 } else {
                     amount = GncNumeric.of(parsed, fraction);
                 }
             } catch (InvalidAmountException e) {
-                errors.put("amount", "entry.error.amount." + e.reason().name());
+                errors.put("amount", amountError(e.reason()));
             }
         }
 
@@ -73,6 +73,17 @@ record EntryCheck(Optional<TransferDraft> draft, Map<String, String> errors,
         }
         return new EntryCheck(Optional.of(new TransferDraft(form.getDate(), tags, form.getText(), amount,
                 from.orElseThrow().guid(), to.orElseThrow().guid(), form.getNotes())), Map.of(), from, to);
+    }
+
+    /** The message for an amount the parser refused; a new reason doesn't compile until it has one. */
+    static String amountError(InvalidAmountException.Reason reason) {
+        return switch (reason) {
+            case MALFORMED -> "entry.error.amount.MALFORMED";
+            case SIGNED -> "entry.error.amount.SIGNED";
+            case AMBIGUOUS -> "entry.error.amount.AMBIGUOUS";
+            case TOO_PRECISE -> "entry.error.amount.TOO_PRECISE";
+            case DIVISION_BY_ZERO -> "entry.error.amount.DIVISION_BY_ZERO";
+        };
     }
 
     private static Optional<AccountSummary> account(String guid, GnuCashBook book) {

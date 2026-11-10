@@ -44,7 +44,7 @@
     <span class="side">
         <span class="amt num" th:classappend="${item.negative()} ? 'neg'" th:text="${item.amount()}">−12.34 €</span>
         <span class="marks">
-            <span class="rec" th:classappend="${item.reconcile()}" th:title="#{'register.reconcile.' + ${item.reconcile()}}"
+            <span class="rec" th:classappend="${item.reconcile()}" th:title="${item.reconcileKey()} ? #{${item.reconcileKey()}}"
                   th:text="${item.reconcile()}">n</span>
             <span class="lock" th:classappend="${item.editable()} ? 'editable'" th:title="#{register.desktopOnly}">🔒</span>
         </span>

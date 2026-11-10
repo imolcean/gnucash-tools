@@ -37,6 +37,8 @@ class EntryView {
         model.addAttribute("form", form);
         model.addAttribute("errors", errors);
         model.addAttribute("fromCurrency", from.map(a -> fmt.symbol(a.commodity())).orElse(""));
+        // Decimals the amount is typed with (entry-form.js); cents until the from account is picked.
+        model.addAttribute("fromDecimals", from.map(a -> Formats.decimalsOf(a.commodity().fraction())).orElse(2));
         model.addAttribute("toCurrency", to.map(a -> fmt.symbol(a.commodity())).orElse(""));
         model.addAttribute("today", LocalDate.now(clock));
     }

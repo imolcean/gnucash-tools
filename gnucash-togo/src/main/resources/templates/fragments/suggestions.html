@@ -30,6 +30,15 @@
 
 <th:block th:fragment="none"></th:block>
 
+<!--/* The result line under the amount; with "replace", the field itself takes the result (on leaving it). */-->
+<th:block th:fragment="amount">
+    <output id="amount-result" for="amount" th:classappend="${error} ? 'error'"
+            th:text="${error} ? #{${error}} : (${result} ? '= ' + ${result} : '')">= 16.80 €</output>
+    <th:block th:if="${replace}">
+        <th:block th:replace="~{fragments/entry-form :: amountInput(${replace}, false, true)}"></th:block>
+    </th:block>
+</th:block>
+
 <input th:fragment="today" type="date" name="date" id="date" required th:value="${today}">
 </body>
 </html>

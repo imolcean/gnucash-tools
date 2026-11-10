@@ -63,6 +63,12 @@ class RegisterTest extends AppTest {
     }
 
     @Test
+    void theReconcileMarkerNamesItsState() throws Exception {
+        assertThat(cash()).contains("<span class=\"rec y\" title=\"Reconciled\">y</span>")
+                .contains("<span class=\"rec n\" title=\"Not reconciled\">n</span>");
+    }
+
+    @Test
     void anUnknownAccountIsNotFound() throws Exception {
         mvc.perform(get("/accounts/" + "0".repeat(32)).session(login())).andExpect(status().isNotFound());
     }

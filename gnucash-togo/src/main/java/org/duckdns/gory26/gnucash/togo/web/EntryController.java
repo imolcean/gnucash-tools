@@ -2,7 +2,10 @@ package org.duckdns.gory26.gnucash.togo.web;
 
 import org.duckdns.gory26.gnucash.book.AccountChoice;
 import org.duckdns.gory26.gnucash.book.AccountSummary;
+import org.duckdns.gory26.gnucash.book.AmountExpression;
+import org.duckdns.gory26.gnucash.book.GncNumeric;
 import org.duckdns.gory26.gnucash.book.GnuCashBook;
+import org.duckdns.gory26.gnucash.book.InvalidAmountException;
 import org.duckdns.gory26.gnucash.book.QuickFill;
 import org.duckdns.gory26.gnucash.book.TaggedDescription;
 import org.duckdns.gory26.gnucash.book.TransferDraft;
@@ -124,6 +127,39 @@ class EntryController {
         return "fragments/suggestions :: none";
     }
 
+    /**
+     * The result line under an amount like {@code 12.30 + 4.50}: {@code = 16.80 €}, or why it can't be calculated;
+     * empty for a plain amount. On leaving the field ({@code done}) a valid sum is replaced by its result, as
+     * Desktop does on Tab.
+     *
+     * @param from the from-account's GUID: its commodity sets the decimals and the rounding of a division
+     */
+    @GetMapping("/entry/amount")
+    String amount(@AuthenticationPrincipal Session session, @RequestParam(defaultValue = "") String amount,
+                  @RequestParam(defaultValue = "") String from, @RequestParam(defaultValue = "false") boolean done,
+                  Model model) {
+        Optional<AccountSummary> account = from.isBlank() ? Optional.empty() : session.book().account(from);
+        model.addAttribute("fromDecimals", account.map(a -> Formats.decimalsOf(a.commodity().fraction())).orElse(2));
+        if (AmountExpression.isPlain(amount)) {
+            return "fragments/suggestions :: amount";
+        }
+        long fraction = account.map(a -> a.commodity().fraction()).orElse(100L);
+        try {
+            GncNumeric result = GncNumeric.of(AmountExpression.evaluate(amount, fraction), fraction);
+            if (done && result.signum() > 0) {
+                // the field shows the result now, so the line under it goes
+                model.addAttribute("replace", account.map(a -> fmt.input(result, a.commodity()))
+                        .orElseGet(() -> result.toBigDecimal().toPlainString()));
+            } else {
+                model.addAttribute("result", account.map(a -> fmt.amount(result, a.commodity()))
+                        .orElseGet(() -> result.toBigDecimal().toPlainString()));
+            }
+        } catch (InvalidAmountException e) {
+            model.addAttribute("error", EntryCheck.amountError(e.reason()));
+        }
+        return "fragments/suggestions :: amount";
+    }
+
     @GetMapping("/entry/today")
     String today(Model model) {
         model.addAttribute("today", LocalDate.now(clock));
@@ -137,16 +173,25 @@ class EntryController {
         GnuCashBook book = session.book();
         form.setText(pick);
         Optional<QuickFill> fill = book.quickFill(pick);
+        // The description comes after from, to and amount: fill only what the user hasn't entered yet.
         fill.ifPresent(f -> {
             form.setText(f.text());
-            form.setTags(new ArrayList<>(f.tags()));
-            form.setTag("");
-            form.setFrom(f.fromAccountGuid());
-            form.setFromLabel("");
-            form.setTo(f.toAccountGuid());
-            form.setToLabel("");
-            book.account(f.fromAccountGuid())
-                    .ifPresent(from -> form.setAmount(fmt.input(f.amount(), from.commodity())));
+            if (form.getTags().isEmpty()) {
+                form.setTags(new ArrayList<>(f.tags()));
+                form.setTag("");
+            }
+            if (form.getFrom().isEmpty()) {
+                form.setFrom(f.fromAccountGuid());
+                form.setFromLabel("");
+            }
+            if (form.getTo().isEmpty()) {
+                form.setTo(f.toAccountGuid());
+                form.setToLabel("");
+            }
+            if (form.getAmount().isEmpty()) {
+                book.account(form.getFrom())
+                        .ifPresent(from -> form.setAmount(fmt.input(f.amount(), from.commodity())));
+            }
         });
         return view.fragment(form, book, model, Map.of());
     }

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <title th:text="|${title} · #{app.name}|">gnucash-togo</title>
+    <title th:text="${title} + ' · ' + #{app.name}">gnucash-togo</title>
     <link rel="stylesheet" th:href="@{/webjars/picocss__pico/css/pico.min.css}">
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <link rel="manifest" th:href="@{/manifest.webmanifest}">
@@ -17,7 +17,8 @@
 <!-- htmx sends the CSRF token with every request it makes (ADR-0006). -->
 <body th:hx-headers='|{"${_csrf.headerName}": "${_csrf.token}"}|'>
 <nav class="app" th:if="${user != null}" th:with="here=${path}">
-    <ul><li><strong th:text="#{app.name}">gnucash-togo</strong></li></ul>
+    <ul><li><strong class="brand"><svg th:replace="~{fragments/icon :: icon('tree-palm')}"></svg><span
+            th:text="#{nav.brand}">Togo</span></strong></li></ul>
     <ul>
         <li><a th:href="@{/}" th:attr="aria-current=${here == '/' ? 'page' : null}" th:text="#{nav.entry}">Entry</a></li>
         <li><a th:href="@{/accounts}" th:attr="aria-current=${here.startsWith('/accounts') ? 'page' : null}" th:text="#{nav.accounts}">Accounts</a></li>

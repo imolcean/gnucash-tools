@@ -76,7 +76,7 @@ public class Formats {
     }
 
     /** 100 → 2, 1 → 0; -1 when the fraction is not a power of ten. */
-    private static int decimalsOf(long fraction) {
+    static int decimalsOf(long fraction) {
         int decimals = 0;
         for (long f = fraction; f > 1; f /= 10) {
             if (f % 10 != 0) {

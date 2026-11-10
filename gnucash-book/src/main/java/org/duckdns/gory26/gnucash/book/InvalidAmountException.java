@@ -12,8 +12,10 @@ public class InvalidAmountException extends IllegalArgumentException {
         SIGNED,
         /** One {@code .} or {@code ,} before exactly three digits: thousands or decimals can't be told apart. */
         AMBIGUOUS,
-        /** Finer than the commodity fraction; amounts are never rounded. */
-        TOO_PRECISE
+        /** Finer than the commodity fraction; typed amounts are never rounded. */
+        TOO_PRECISE,
+        /** An {@link AmountExpression} divides by zero. */
+        DIVISION_BY_ZERO
     }
 
     private final Reason reason;
