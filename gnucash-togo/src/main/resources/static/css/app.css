@@ -72,21 +72,37 @@ a.item:active { background: var(--pico-secondary-background); }
 .item .side { display: flex; flex-direction: column; align-items: flex-end; gap: .15rem; }
 .item .marks { display: flex; gap: .3rem; align-items: center; }
 
-/* entry form */
-.entry [role=group] > button { flex: none; width: auto; }
-/* amount: the result line, and the operator strip while the field has focus */
-.amount { margin-bottom: var(--pico-spacing); }
-.amount input { margin-bottom: .25rem; }
-#amount-result { display: block; min-height: 1.2em; text-align: right; font-size: .9rem; color: var(--pico-muted-color);
+/* entry form: one compact row per field, label beside it, so the description's suggestions end above the lower
+   third of the screen, where a phone's keyboard sits (2026-11-10). What follows a field goes under it. */
+.entry { --pico-form-element-spacing-vertical: .5rem; }
+.entry .field { display: grid; grid-template-columns: 7rem minmax(0, 1fr); column-gap: .5rem; align-items: center;
+                margin-bottom: .5rem; }
+.entry .field > label { grid-column: 1; margin: 0; font-size: .9rem; white-space: nowrap; overflow: hidden; }
+.entry .field > :not(label) { grid-column: 2; }
+.entry .field input, .entry .field [role=group], .entry .picker input { margin-bottom: 0; }
+.entry [role=group] > input { min-width: 0; }
+.entry [role=group] > button { flex: none; width: auto; padding-inline: .75rem; }
+.entry details > summary { font-size: .9rem; }
+/* amount: the result line, shown only for a sum, and the operator strip while the field has focus */
+#amount-result { display: block; text-align: right; font-size: .85rem; color: var(--pico-muted-color);
                  font-variant-numeric: tabular-nums; }
+#amount-result:empty { display: none; }
 #amount-result.error { color: var(--pico-del-color); }
 .amount .ops { display: none; grid-template-columns: repeat(4, 1fr); gap: .4rem; margin-top: .25rem; }
 .amount:focus-within .ops { display: grid; }
 .amount .ops button { margin: 0; padding: .45rem 0; font-size: 1.25rem; font-weight: 600; line-height: 1;
                       touch-action: manipulation; }
+/* A suggestion list opens over the fields below it, so the page keeps its height, and dims the rest of the page.
+   The open picker sits above the cover with its box and list; a tap on the cover leaves the box and closes the list.
+   The list holds at most four items (EntryController.SHOWN), so it needs no scroll bar of its own. */
 .picker { position: relative; }
-.suggestions { list-style: none; padding: 0; margin: -.5rem 0 .75rem; border: 1px solid var(--pico-muted-border-color);
-               border-radius: var(--pico-border-radius); max-height: 18rem; overflow-y: auto; }
+.picker:has(.suggestions li) { z-index: 10; }
+.picker:has(.suggestions li)::before { content: ""; position: fixed; inset: 0; z-index: -1;
+                                       background: rgb(0 0 0 / .45); backdrop-filter: blur(2px); animation: dim .15s; }
+@keyframes dim { from { opacity: 0; } }
+.suggestions { position: absolute; top: 100%; left: 0; right: 0; list-style: none; padding: 0; margin: .25rem 0 0;
+               border: 1px solid var(--pico-muted-border-color); border-radius: var(--pico-border-radius);
+               background: var(--pico-background-color); box-shadow: var(--pico-card-box-shadow); overflow: hidden; }
 .suggestions:empty { display: none; }
 .suggestions li { list-style: none; margin: 0; padding: 0; }
 .suggestions button { all: unset; box-sizing: border-box; display: block; width: 100%; padding: .45rem .6rem; cursor: pointer;
@@ -96,6 +112,6 @@ a.item:active { background: var(--pico-secondary-background); }
 .chips:empty { display: none; }
 .chips .chip { font-size: .85rem; padding: .2rem .5rem; }
 .chips .chip button { all: unset; cursor: pointer; margin-left: .3rem; font-weight: 700; }
-.field-error { display: block; margin-top: -.5rem; margin-bottom: .75rem; color: var(--pico-del-color); font-size: .85rem; }
+.field-error { display: block; margin-top: .25rem; color: var(--pico-del-color); font-size: .85rem; }
 .saved { color: var(--pico-ins-color); animation: fade 6s forwards; }
 @keyframes fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }

@@ -239,7 +239,7 @@ class EntryTest extends AppTest {
     /** entry-form.js finds the pickers by the marker; htmx refocuses the box after a pick by its id. */
     @Test
     void accountBoxesCarryAnIdAndThePickerItsMarker() throws Exception {
-        assertThat(page("/")).containsPattern("class=\"picker\" data-account-picker[^>]*>")
+        assertThat(page("/")).containsPattern("class=\"field picker\" data-account-picker[^>]*>")
                 .contains("<input id=\"from-label\" name=\"fromLabel\"")
                 .contains("<input id=\"to-label\" name=\"toLabel\"");
     }
