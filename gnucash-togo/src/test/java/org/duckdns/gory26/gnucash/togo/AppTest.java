@@ -31,6 +31,12 @@ public abstract class AppTest {
     protected static final String BOOK = "app_book";
     protected static final String ROLE = "togo";
     protected static final String PASSWORD = "togo";
+    @Autowired
+    protected MockMvc mvc;
+    @Autowired
+    protected Sessions sessions;
+    /** The sample book as its owner sees it, for setting up and checking state behind the app's back. */
+    protected JdbcClient sql;
 
     @DynamicPropertySource
     static void book(DynamicPropertyRegistry registry) {
@@ -41,17 +47,9 @@ public abstract class AppTest {
         registry.add("togo.db.connection-timeout", () -> "1s");
     }
 
-    @Autowired
-    protected MockMvc mvc;
-
-    @Autowired
-    protected Sessions sessions;
-
-    /** The sample book as its owner sees it, for setting up and checking state behind the app's back. */
-    protected JdbcClient sql;
-
     @BeforeEach
-    @SuppressWarnings("SqlWithoutWhere") // Always single row
+    @SuppressWarnings("SqlWithoutWhere")
+        // Always single row
     void freshBook() {
         SampleBook.recreate(BOOK);
         SampleBook.grantAppRole(BOOK, ROLE, PASSWORD);
@@ -73,7 +71,7 @@ public abstract class AppTest {
     protected MockHttpSession login() throws Exception {
         MvcResult result = mvc.perform(formLogin("/login").user(ROLE).password(PASSWORD)).andReturn();
         MockHttpSession session = (MockHttpSession) result.getRequest().getSession(false);
-        if (session == null || result.getResponse().getRedirectedUrl() == null
+        if(session == null || result.getResponse().getRedirectedUrl() == null
                 || result.getResponse().getRedirectedUrl().contains("error")) {
             throw new IllegalStateException("login failed: " + result.getResponse().getRedirectedUrl());
         }

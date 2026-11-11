@@ -2,19 +2,20 @@ package org.duckdns.gory26.gnucash.book;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /** A snapshot of the whole account tree; small enough to load per request. */
 final class Accounts {
 
-    record Row(String guid, String name, AccountType type, String parentGuid, String code,
-               boolean hidden, boolean placeholder, Commodity commodity) {
+    record Row(String guid,
+               String name,
+               AccountType type,
+               String parentGuid,
+               String code,
+               boolean hidden,
+               boolean placeholder,
+               Commodity commodity) {
     }
 
     private static final Comparator<Row> DESKTOP_ORDER =
@@ -28,8 +29,8 @@ final class Accounts {
         this.rootGuid = rootGuid;
         this.byGuid = rows.stream().collect(Collectors.toMap(Row::guid, r -> r));
         Map<String, List<Row>> kids = new HashMap<>();
-        for (Row r : rows) {
-            if (r.parentGuid() != null) {
+        for(Row r : rows) {
+            if(r.parentGuid() != null) {
                 kids.computeIfAbsent(r.parentGuid(), _ -> new ArrayList<>()).add(r);
             }
         }
@@ -64,7 +65,7 @@ final class Accounts {
 
     Row get(String guid) {
         Row row = byGuid.get(guid);
-        if (row == null) {
+        if(row == null) {
             throw new IllegalArgumentException("no such account: " + guid);
         }
         return row;
@@ -89,7 +90,7 @@ final class Accounts {
     /** Below the root, e.g. {@code Expenses:Food:Groceries}. */
     String path(String guid) {
         List<String> names = new ArrayList<>();
-        for (Row r = byGuid.get(guid); r != null && !r.guid().equals(rootGuid); r = byGuid.get(r.parentGuid())) {
+        for(Row r = byGuid.get(guid); r != null && !r.guid().equals(rootGuid); r = byGuid.get(r.parentGuid())) {
             names.addFirst(r.name());
         }
         return String.join(":", names);
@@ -97,8 +98,8 @@ final class Accounts {
 
     /** Hidden itself or through an ancestor. */
     boolean effectivelyHidden(String guid) {
-        for (Row r = byGuid.get(guid); r != null; r = byGuid.get(r.parentGuid())) {
-            if (r.hidden()) {
+        for(Row r = byGuid.get(guid); r != null; r = byGuid.get(r.parentGuid())) {
+            if(r.hidden()) {
                 return true;
             }
         }
@@ -108,20 +109,20 @@ final class Accounts {
     /** Why a transfer may not use this account, or empty when it may. */
     Optional<String> whyNotTransferable(String guid) {
         Row row = byGuid.get(guid);
-        if (row == null || row.guid().equals(rootGuid) || row.type() == AccountType.ROOT) {
+        if(row == null || row.guid().equals(rootGuid) || row.type() == AccountType.ROOT) {
             return Optional.of("unknown account " + guid);
         }
         String path = path(guid);
-        if (row.placeholder()) {
+        if(row.placeholder()) {
             return Optional.of(path + " is a placeholder");
         }
-        if (effectivelyHidden(guid)) {
+        if(effectivelyHidden(guid)) {
             return Optional.of(path + " is hidden");
         }
-        if (row.type() == AccountType.TRADING) {
+        if(row.type() == AccountType.TRADING) {
             return Optional.of(path + " is a trading account");
         }
-        if (row.commodity() == null || !row.commodity().isCurrency()) {
+        if(row.commodity() == null || !row.commodity().isCurrency()) {
             return Optional.of(path + " does not hold a currency");
         }
         return Optional.empty();

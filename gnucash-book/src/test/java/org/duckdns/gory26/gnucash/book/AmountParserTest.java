@@ -13,6 +13,33 @@ class AmountParserTest {
 
     private static final long CENTS = 100;
 
+    private static GncNumeric cents(String input) {
+        return GncNumeric.of(AmountParser.parse(input, CENTS), CENTS);
+    }
+
+    /** Builds the text a user might type for {@code c} cents, varying the style, without any floating point. */
+    private static String typed(long c) {
+        long euros = c / 100;
+        String cents = String.format("%02d", c % 100);
+        return switch((int) (c % 3)) {
+            case 0 -> euros + "," + cents;
+            case 1 -> euros + "." + cents;
+            default -> grouped(euros, euros % 2 == 0 ? " " : ".") + "," + cents;
+        };
+    }
+
+    private static String grouped(long euros, String separator) {
+        String plain = Long.toString(euros);
+        StringBuilder out = new StringBuilder();
+        for(int i = 0; i < plain.length(); i++) {
+            if(i > 0 && (plain.length() - i) % 3 == 0) {
+                out.append(separator);
+            }
+            out.append(plain.charAt(i));
+        }
+        return out.toString();
+    }
+
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
             "12,34 | 12.34",
@@ -83,38 +110,11 @@ class AmountParserTest {
 
     @Test
     void everyCentValueUpTo99999_99RoundTripsThroughNumOverDenom() {
-        for (long c = 0; c <= 9_999_999; c++) {
+        for(long c = 0; c <= 9_999_999; c++) {
             String typed = typed(c);
             GncNumeric amount = cents(typed);
             assertThat(amount.num()).as(typed).isEqualTo(c);
             assertThat(amount.toBigDecimal()).as(typed).isEqualTo(BigDecimal.valueOf(c, 2));
         }
-    }
-
-    private static GncNumeric cents(String input) {
-        return GncNumeric.of(AmountParser.parse(input, CENTS), CENTS);
-    }
-
-    /** Builds the text a user might type for {@code c} cents, varying the style, without any floating point. */
-    private static String typed(long c) {
-        long euros = c / 100;
-        String cents = String.format("%02d", c % 100);
-        return switch ((int) (c % 3)) {
-            case 0 -> euros + "," + cents;
-            case 1 -> euros + "." + cents;
-            default -> grouped(euros, euros % 2 == 0 ? " " : ".") + "," + cents;
-        };
-    }
-
-    private static String grouped(long euros, String separator) {
-        String plain = Long.toString(euros);
-        StringBuilder out = new StringBuilder();
-        for (int i = 0; i < plain.length(); i++) {
-            if (i > 0 && (plain.length() - i) % 3 == 0) {
-                out.append(separator);
-            }
-            out.append(plain.charAt(i));
-        }
-        return out.toString();
     }
 }

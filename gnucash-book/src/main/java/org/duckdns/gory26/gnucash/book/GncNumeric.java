@@ -10,10 +10,11 @@ import java.math.RoundingMode;
  * The sign is on the numerator; the denominator is always positive and is kept as given, not reduced,
  * because GnuCash stores the commodity fraction as the denominator.
  */
-public record GncNumeric(long num, long denom) implements Comparable<GncNumeric> {
+public record GncNumeric(long num,
+                         long denom) implements Comparable<GncNumeric> {
 
     public GncNumeric {
-        if (denom <= 0) {
+        if(denom <= 0) {
             throw new IllegalArgumentException("denominator must be positive: " + num + "/" + denom);
         }
     }
@@ -61,7 +62,7 @@ public record GncNumeric(long num, long denom) implements Comparable<GncNumeric>
     public BigDecimal toBigDecimal() {
         int scale = 0;
         long rest = denom;
-        while (rest % 10 == 0) {
+        while(rest % 10 == 0) {
             rest /= 10;
             scale++;
         }
@@ -80,12 +81,12 @@ public record GncNumeric(long num, long denom) implements Comparable<GncNumeric>
      * @throws ArithmeticException if the value does not fit the fraction exactly; it is never rounded
      */
     public GncNumeric toFraction(long fraction) {
-        if (fraction <= 0) {
+        if(fraction <= 0) {
             throw new IllegalArgumentException("fraction must be positive: " + fraction);
         }
         long g = gcd(fraction, denom);
         long reducedDenom = denom / g;
-        if (num % reducedDenom != 0) {
+        if(num % reducedDenom != 0) {
             throw new ArithmeticException(this + " does not fit fraction " + fraction);
         }
         return new GncNumeric(Math.multiplyExact(num / reducedDenom, fraction / g), fraction);
@@ -104,7 +105,7 @@ public record GncNumeric(long num, long denom) implements Comparable<GncNumeric>
 
     /** {@code denom/num}, sign kept on the numerator. */
     public GncNumeric invert() {
-        if (num == 0) {
+        if(num == 0) {
             throw new ArithmeticException("cannot invert zero");
         }
         return num > 0 ? new GncNumeric(denom, num) : new GncNumeric(Math.negateExact(denom), Math.negateExact(num));
@@ -118,18 +119,18 @@ public record GncNumeric(long num, long denom) implements Comparable<GncNumeric>
         return Long.signum(num);
     }
 
+    /** Compares by value, so {@code 1/2} equals {@code 50/100} here even though the records differ. */
+    @Override
+    public int compareTo(GncNumeric other) {
+        return Long.compare(Math.multiplyExact(num, other.denom), Math.multiplyExact(other.num, denom));
+    }
+
     private static long gcd(long a, long b) {
-        while (b != 0) {
+        while(b != 0) {
             long t = a % b;
             a = b;
             b = t;
         }
         return a;
-    }
-
-    /** Compares by value, so {@code 1/2} equals {@code 50/100} here even though the records differ. */
-    @Override
-    public int compareTo(GncNumeric other) {
-        return Long.compare(Math.multiplyExact(num, other.denom), Math.multiplyExact(other.num, denom));
     }
 }

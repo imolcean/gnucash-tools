@@ -12,7 +12,7 @@ public enum AccountType {
      * "Reverse balanced accounts: Credit accounts" setting ({@code gnc-ui-util.cpp}). TRADING is not flipped.
      */
     public boolean reversed() {
-        return switch (this) {
+        return switch(this) {
             case INCOME, LIABILITY, CREDIT, EQUITY, PAYABLE -> true;
             default -> false;
         };

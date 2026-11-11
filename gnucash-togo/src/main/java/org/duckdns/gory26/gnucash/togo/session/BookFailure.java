@@ -20,12 +20,12 @@ public enum BookFailure {
     /** The failure behind {@code e}, or null when the book answered and the error is something else. */
     public static @Nullable BookFailure of(Throwable e) {
         BookFailure found = null;
-        for (Throwable t = e; t != null; t = t.getCause()) {
+        for(Throwable t = e; t != null; t = t.getCause()) {
             String state = t instanceof SQLException sql && sql.getSQLState() != null ? sql.getSQLState() : "";
-            if (state.startsWith("28")) {
+            if(state.startsWith("28")) {
                 return LOGIN_REFUSED;
             }
-            if (t instanceof SQLTransientConnectionException || state.startsWith("08") || state.startsWith("57P0")) {
+            if(t instanceof SQLTransientConnectionException || state.startsWith("08") || state.startsWith("57P0")) {
                 found = UNREACHABLE;
             }
         }

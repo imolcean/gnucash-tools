@@ -36,6 +36,15 @@ public class Sessions {
         this.clock = clock;
     }
 
+    public int openCount() {
+        return open.size();
+    }
+
+    @PreDestroy
+    public void closeAll() {
+        open.forEach(this::close);
+    }
+
     /**
      * Opens a pool with the login's credentials and proves it with one connection.
      *
@@ -67,14 +76,5 @@ public class Sessions {
     void close(Session session) {
         open.remove(session);
         session.close();
-    }
-
-    public int openCount() {
-        return open.size();
-    }
-
-    @PreDestroy
-    public void closeAll() {
-        open.forEach(this::close);
     }
 }

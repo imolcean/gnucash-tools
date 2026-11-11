@@ -31,13 +31,13 @@ public final class AmountParser {
      */
     public static BigDecimal parse(String text, long fraction) {
         String s = SPACES.matcher(text.strip()).replaceAll(" ");
-        if (SIGNS.matcher(s).matches()) {
+        if(SIGNS.matcher(s).matches()) {
             throw new InvalidAmountException(Reason.SIGNED, text);
         }
-        if (!ALLOWED.matcher(s).matches()) {
+        if(!ALLOWED.matcher(s).matches()) {
             throw new InvalidAmountException(Reason.MALFORMED, text);
         }
-        if (THOUSANDS_LOOKALIKE.matcher(s).matches()) {
+        if(THOUSANDS_LOOKALIKE.matcher(s).matches()) {
             throw new InvalidAmountException(Reason.AMBIGUOUS, text);
         }
 
@@ -46,13 +46,13 @@ public final class AmountParser {
         String fractionPart = decimalMark < 0 ? "" : s.substring(decimalMark + 1);
         boolean integerOk = DIGITS.matcher(integerPart).matches() || isGroupedWithOneSeparator(integerPart);
         boolean fractionOk = decimalMark < 0 || (!fractionPart.isEmpty() && DIGITS.matcher(fractionPart).matches());
-        if (!integerOk || !fractionOk) {
+        if(!integerOk || !fractionOk) {
             throw new InvalidAmountException(Reason.MALFORMED, text);
         }
 
         String digits = integerPart.replaceAll("[ .,]", "");
         BigDecimal amount = new BigDecimal((digits.isEmpty() ? "0" : digits) + (fractionPart.isEmpty() ? "" : "." + fractionPart));
-        if (amount.multiply(BigDecimal.valueOf(fraction)).stripTrailingZeros().scale() > 0) {
+        if(amount.multiply(BigDecimal.valueOf(fraction)).stripTrailingZeros().scale() > 0) {
             throw new InvalidAmountException(Reason.TOO_PRECISE, text);
         }
         return amount;
@@ -62,11 +62,11 @@ public final class AmountParser {
     private static int decimalMarkPosition(String s) {
         int lastDot = s.lastIndexOf('.');
         int lastComma = s.lastIndexOf(',');
-        if (lastDot >= 0 && lastComma >= 0) {
+        if(lastDot >= 0 && lastComma >= 0) {
             return Math.max(lastDot, lastComma);
         }
         int last = Math.max(lastDot, lastComma);
-        if (last < 0 || s.indexOf(s.charAt(last)) != last) {
+        if(last < 0 || s.indexOf(s.charAt(last)) != last) {
             return -1;
         }
         return last;

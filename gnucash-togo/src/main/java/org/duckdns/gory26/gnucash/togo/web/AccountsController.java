@@ -17,8 +17,21 @@ import java.util.Optional;
 @Controller
 class AccountsController {
 
+    /**
+     * One line of the tree, formatted.
+     *
+     * @param own the account's own balance, shown only when it is not zero and differs from the total; or null
+     */
+    record Row(String guid,
+               String name,
+               String path,
+               boolean placeholder,
+               String total,
+               boolean negative,
+               String own,
+               List<Row> children) {
+    }
     static final String HIDE_ZERO = "togo.hideZero";
-
     private final Formats fmt;
 
     AccountsController(Formats fmt) {
@@ -38,15 +51,6 @@ class AccountsController {
         return "accounts";
     }
 
-    /**
-     * One line of the tree, formatted.
-     *
-     * @param own the account's own balance, shown only when it is not zero and differs from the total; or null
-     */
-    record Row(String guid, String name, String path, boolean placeholder,
-               String total, boolean negative, String own, List<Row> children) {
-    }
-
     private List<Row> rows(List<AccountNode> nodes, boolean hideZero) {
         return nodes.stream()
                 .map(node -> row(node, hideZero))
@@ -58,7 +62,7 @@ class AccountsController {
     private Optional<Row> row(AccountNode node, boolean hideZero) {
         List<Row> children = rows(node.children(), hideZero);
         Optional<GncNumeric> total = node.displayTotal();
-        if (hideZero && total.isPresent() && total.get().isZero() && children.isEmpty()) {
+        if(hideZero && total.isPresent() && total.get().isZero() && children.isEmpty()) {
             return Optional.empty();
         }
         GncNumeric own = node.displayBalance();

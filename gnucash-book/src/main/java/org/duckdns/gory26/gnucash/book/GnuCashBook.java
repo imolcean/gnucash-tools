@@ -12,17 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -89,9 +79,10 @@ public final class GnuCashBook {
         List<String> differences = new ArrayList<>();
         new TreeMap<>(KNOWN_VERSIONS).forEach((table, expected) -> {
             Integer actual = found.remove(table);
-            if (actual == null) {
+            if(actual == null) {
                 differences.add(table + ": missing, expected version " + expected);
-            } else if (!actual.equals(expected)) {
+            }
+            else if(!actual.equals(expected)) {
                 differences.add(table + ": version " + actual + ", expected " + expected);
             }
         });
@@ -134,7 +125,8 @@ public final class GnuCashBook {
         Accounts.Row row;
         try {
             row = accounts.get(guid);
-        } catch (IllegalArgumentException e) {
+        }
+        catch(IllegalArgumentException e) {
             return Optional.empty();
         }
         GncNumeric balance = balanceOf(guid, row.commodity(), "t.post_date < :end",
@@ -142,90 +134,6 @@ public final class GnuCashBook {
         return Optional.of(new AccountSummary(row.guid(), row.name(), accounts.path(guid), row.type(), row.commodity(),
                 row.placeholder(), accounts.effectivelyHidden(guid), balance));
     }
-
-    private List<AccountNode> visibleChildren(Accounts accounts, String parentGuid,
-                                              Map<String, GncNumeric> balances, Prices prices) {
-        return accounts.children(parentGuid).stream()
-                .filter(row -> !row.hidden())
-                .map(row -> new AccountNode(row.guid(), row.name(), accounts.path(row.guid()), row.type(),
-                        row.commodity(), row.placeholder(),
-                        balances.getOrDefault(row.guid(), zero(row.commodity())),
-                        total(accounts, row, balances, prices),
-                        visibleChildren(accounts, row.guid(), balances, prices)))
-                .toList();
-    }
-
-    /**
-     * Desktop's rollup: each account in the subtree converts its own balance straight into the top account's
-     * commodity with the latest price, rounded to that commodity's fraction ({@code Account.cpp},
-     * {@code xaccAccountGetXxxBalanceAsOfDateInCurrencyRecursive}). A missing price gives no total rather
-     * than desktop's silent zero.
-     */
-    private static Optional<GncNumeric> total(Accounts accounts, Accounts.Row top,
-                                              Map<String, GncNumeric> balances, Prices prices) {
-        Commodity target = top.commodity();
-        GncNumeric sum = zero(target);
-        for (Accounts.Row row : accounts.subtree(top.guid())) {
-            GncNumeric own = balances.get(row.guid());
-            if (own == null || own.isZero()) {
-                continue;
-            }
-            if (row.commodity().guid().equals(target.guid())) {
-                sum = sum.add(own);
-                continue;
-            }
-            Optional<GncNumeric> rate = prices.rate(row.commodity().guid(), target.guid());
-            if (rate.isEmpty()) {
-                return Optional.empty();
-            }
-            sum = sum.add(own.multiply(rate.get()).roundToFraction(target.fraction()));
-        }
-        return Optional.of(sum);
-    }
-
-    /** One grouped aggregate, exact: integer sums per denominator, combined as rationals here. */
-    private Map<String, GncNumeric> balancesBefore(LocalDateTime end) {
-        Map<String, GncNumeric> balances = new HashMap<>();
-        jdbc.sql("""
-                        SELECT s.account_guid, s.quantity_denom, SUM(s.quantity_num) AS quantity
-                        FROM splits s JOIN transactions t ON t.guid = s.tx_guid
-                        WHERE t.post_date < :end
-                        GROUP BY s.account_guid, s.quantity_denom""")
-                .param("end", end)
-                .query(rs -> {
-                    GncNumeric part = new GncNumeric(rs.getBigDecimal("quantity").longValueExact(),
-                            rs.getLong("quantity_denom"));
-                    balances.merge(rs.getString("account_guid"), part, GncNumeric::add);
-                });
-        return balances;
-    }
-
-    /**
-     * One account's balance over the splits matching {@code where}, exact: integer sums per denominator,
-     * combined as rationals here.
-     *
-     * @param where an SQL condition on {@code s} (splits) and {@code t} (transactions), using {@code params}
-     */
-    private GncNumeric balanceOf(String accountGuid, Commodity commodity, String where, Map<String, ?> params) {
-        GncNumeric balance = zero(commodity);
-        for (GncNumeric part : jdbc.sql("SELECT s.quantity_denom, SUM(s.quantity_num) AS quantity "
-                        + "FROM splits s JOIN transactions t ON t.guid = s.tx_guid "
-                        + "WHERE s.account_guid = :account AND " + where + " "
-                        + "GROUP BY s.quantity_denom")
-                .param("account", accountGuid)
-                .params(params)
-                .query((rs, _) -> new GncNumeric(rs.getBigDecimal("quantity").longValueExact(), rs.getLong("quantity_denom")))
-                .list()) {
-            balance = balance.add(part);
-        }
-        return balance;
-    }
-
-    private static GncNumeric zero(Commodity commodity) {
-        return new GncNumeric(0, commodity == null ? 1 : commodity.fraction());
-    }
-
-    // ---------------------------------------------------------------- register
 
     public RegisterPage register(String accountGuid, int limit) {
         return register(accountGuid, null, limit);
@@ -237,14 +145,19 @@ public final class GnuCashBook {
      * @param after the previous page's {@link RegisterPage#next()}, or null for the first page
      */
     public RegisterPage register(String accountGuid, RegisterCursor after, int limit) {
-        if (limit < 1) {
+        if(limit < 1) {
             throw new IllegalArgumentException("limit must be positive: " + limit);
         }
         Accounts accounts = Accounts.load(jdbc);
         Accounts.Row account = accounts.get(accountGuid);
 
-        record Line(String splitGuid, String txGuid, LocalDateTime postDate, LocalDateTime enterDate,
-                    String description, String currencyGuid, GncNumeric amount) {
+        record Line(String splitGuid,
+                    String txGuid,
+                    LocalDateTime postDate,
+                    LocalDateTime enterDate,
+                    String description,
+                    String currencyGuid,
+                    GncNumeric amount) {
         }
         JdbcClient.StatementSpec query = jdbc.sql("SELECT s.guid AS split_guid, t.guid AS tx_guid, "
                         + POST_DATE + " AS post_date, " + ENTER_DATE + " AS enter_date, "
@@ -255,7 +168,7 @@ public final class GnuCashBook {
                         + "ORDER BY " + NEWEST_FIRST + " LIMIT :limit")
                 .param("account", accountGuid)
                 .param("limit", limit + 1);
-        if (after != null) {
+        if(after != null) {
             query = query.param("post", after.postDate()).param("enter", after.enterDate()).param("split", after.splitGuid());
         }
         List<Line> lines = query.query((rs, _) -> new Line(
@@ -264,7 +177,7 @@ public final class GnuCashBook {
                         rs.getString("description"), rs.getString("currency_guid"),
                         new GncNumeric(rs.getLong("quantity_num"), rs.getLong("quantity_denom"))))
                 .list();
-        if (lines.isEmpty()) {
+        if(lines.isEmpty()) {
             return new RegisterPage(List.of(), Optional.empty());
         }
         boolean more = lines.size() > limit;
@@ -284,7 +197,7 @@ public final class GnuCashBook {
         Map<String, String> notes = notesOf(txGuids);
 
         List<RegisterRow> rows = new ArrayList<>();
-        for (Line line : page) {
+        for(Line line : page) {
             List<SplitRow> splits = splitsByTx.get(line.txGuid());
             SplitRow own = splits.stream().filter(s -> s.guid().equals(line.splitGuid())).findFirst().orElseThrow();
             rows.add(new RegisterRow(line.txGuid(), line.splitGuid(), line.postDate().toLocalDate(),
@@ -300,56 +213,21 @@ public final class GnuCashBook {
                 : Optional.empty());
     }
 
-    private Map<String, String> notesOf(List<String> txGuids) {
-        Map<String, String> notes = new HashMap<>();
-        jdbc.sql("SELECT obj_guid, string_val FROM slots WHERE name = 'notes' AND obj_guid IN (:txs)")
-                .param("txs", txGuids)
-                .query(rs -> {
-                    notes.put(rs.getString(1), rs.getString(2) == null ? "" : rs.getString(2));
-                });
-        return notes;
-    }
-
-    /**
-     * Why the app may not edit or delete this transaction, or empty when it may (ADR-0008): exactly two
-     * splits, none reconciled, both in transferable accounts of the transaction's currency, moving money.
-     */
-    static Optional<String> whyNotEditable(Accounts accounts, String currencyGuid, List<SplitRow> splits) {
-        if (splits.size() != 2) {
-            return Optional.of("it has " + splits.size() + " splits");
-        }
-        for (SplitRow split : splits) {
-            if (split.reconciled()) {
-                return Optional.of("a split is reconciled");
-            }
-            Optional<String> account = accounts.whyNotTransferable(split.accountGuid());
-            if (account.isPresent()) {
-                return account;
-            }
-            if (!accounts.get(split.accountGuid()).commodity().guid().equals(currencyGuid)
-                    || split.value().compareTo(split.quantity()) != 0) {
-                return Optional.of("it mixes commodities");
-            }
-            if (split.value().isZero()) {
-                return Optional.of("it moves nothing");
-            }
-        }
-        return Optional.empty();
-    }
-
     /** The edit form's starting point, for a transaction the app may edit. */
     public Optional<TransferDraft> draft(String txGuid) {
-        record Head(String currencyGuid, LocalDateTime postDate, String description) {
+        record Head(String currencyGuid,
+                    LocalDateTime postDate,
+                    String description) {
         }
         Optional<Head> head = jdbc.sql("SELECT currency_guid, post_date, description FROM transactions WHERE guid = :tx")
                 .param("tx", txGuid)
                 .query((rs, _) -> new Head(rs.getString(1), rs.getObject(2, LocalDateTime.class), rs.getString(3)))
                 .optional();
-        if (head.isEmpty()) {
+        if(head.isEmpty()) {
             return Optional.empty();
         }
         List<SplitRow> splits = splitsOf(txGuid, false);
-        if (whyNotEditable(Accounts.load(jdbc), head.get().currencyGuid(), splits).isPresent()) {
+        if(whyNotEditable(Accounts.load(jdbc), head.get().currencyGuid(), splits).isPresent()) {
             return Optional.empty();
         }
         SplitRow in = splits.get(0).value().signum() > 0 ? splits.get(0) : splits.get(1);
@@ -358,16 +236,6 @@ public final class GnuCashBook {
         return Optional.of(new TransferDraft(head.get().postDate().toLocalDate(), description.tags(), description.text(),
                 in.value(), out.accountGuid(), in.accountGuid(), notesOf(List.of(txGuid)).getOrDefault(txGuid, "")));
     }
-
-    private List<SplitRow> splitsOf(String txGuid, boolean forUpdate) {
-        return jdbc.sql("SELECT " + SplitRow.COLUMNS + " FROM splits s WHERE s.tx_guid = :tx ORDER BY s.guid"
-                        + (forUpdate ? " FOR UPDATE" : ""))
-                .param("tx", txGuid)
-                .query(SplitRow.MAPPER)
-                .list();
-    }
-
-    // ---------------------------------------------------------------- suggestions
 
     /** Distinct description texts (tags stripped) containing {@code text}, most recent first. */
     public List<String> suggestDescriptions(String text) {
@@ -384,7 +252,8 @@ public final class GnuCashBook {
 
     /** Tags, accounts and amount of the latest two-split transaction whose text (tags stripped) is {@code text}. */
     public Optional<QuickFill> quickFill(String text) {
-        record Match(String guid, String description) {
+        record Match(String guid,
+                     String description) {
         }
         Optional<Match> match = jdbc.sql("SELECT t.guid, t.description FROM transactions t "
                         + "WHERE " + TEXT_AFTER_TAGS + " = :text "
@@ -401,6 +270,8 @@ public final class GnuCashBook {
             return new QuickFill(description.tags(), description.text(), in.value(), out.accountGuid(), in.accountGuid());
         });
     }
+
+    // ---------------------------------------------------------------- register
 
     /** Distinct tags starting with {@code prefix}, most recently used first. */
     public List<String> suggestTags(String prefix) {
@@ -427,7 +298,8 @@ public final class GnuCashBook {
      */
     public List<AccountChoice> suggestAccounts(String query) {
         Accounts accounts = Accounts.load(jdbc);
-        record Usage(long uses, LocalDateTime lastUsed) {
+        record Usage(long uses,
+                     LocalDateTime lastUsed) {
         }
         Map<String, Usage> usage = new HashMap<>();
         jdbc.sql("""
@@ -442,7 +314,9 @@ public final class GnuCashBook {
         Usage unused = new Usage(0, LocalDateTime.MIN);
         List<String> words = Arrays.stream(query.strip().toLowerCase(Locale.ROOT).split("\\s+"))
                 .filter(w -> !w.isEmpty()).toList();
-        record Candidate(Accounts.Row row, String path, Usage usage) {
+        record Candidate(Accounts.Row row,
+                         String path,
+                         Usage usage) {
         }
         return accounts.all().stream()
                 .filter(row -> accounts.whyNotTransferable(row.guid()).isEmpty())
@@ -455,12 +329,6 @@ public final class GnuCashBook {
                 .map(c -> new AccountChoice(c.row().guid(), c.path(), c.row().commodity().mnemonic()))
                 .toList();
     }
-
-    private static String likeEscape(String text) {
-        return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
-    }
-
-    // ---------------------------------------------------------------- writes
 
     /**
      * Adds the transfer as a new transaction.
@@ -496,6 +364,165 @@ public final class GnuCashBook {
     }
 
     /**
+     * Desktop's rollup: each account in the subtree converts its own balance straight into the top account's
+     * commodity with the latest price, rounded to that commodity's fraction ({@code Account.cpp},
+     * {@code xaccAccountGetXxxBalanceAsOfDateInCurrencyRecursive}). A missing price gives no total rather
+     * than desktop's silent zero.
+     */
+    private static Optional<GncNumeric> total(Accounts accounts, Accounts.Row top,
+                                              Map<String, GncNumeric> balances, Prices prices) {
+        Commodity target = top.commodity();
+        GncNumeric sum = zero(target);
+        for(Accounts.Row row : accounts.subtree(top.guid())) {
+            GncNumeric own = balances.get(row.guid());
+            if(own == null || own.isZero()) {
+                continue;
+            }
+            if(row.commodity().guid().equals(target.guid())) {
+                sum = sum.add(own);
+                continue;
+            }
+            Optional<GncNumeric> rate = prices.rate(row.commodity().guid(), target.guid());
+            if(rate.isEmpty()) {
+                return Optional.empty();
+            }
+            sum = sum.add(own.multiply(rate.get()).roundToFraction(target.fraction()));
+        }
+        return Optional.of(sum);
+    }
+
+    // ---------------------------------------------------------------- suggestions
+
+    private static GncNumeric zero(Commodity commodity) {
+        return new GncNumeric(0, commodity == null ? 1 : commodity.fraction());
+    }
+
+    /**
+     * Why the app may not edit or delete this transaction, or empty when it may (ADR-0008): exactly two
+     * splits, none reconciled, both in transferable accounts of the transaction's currency, moving money.
+     */
+    static Optional<String> whyNotEditable(Accounts accounts, String currencyGuid, List<SplitRow> splits) {
+        if(splits.size() != 2) {
+            return Optional.of("it has " + splits.size() + " splits");
+        }
+        for(SplitRow split : splits) {
+            if(split.reconciled()) {
+                return Optional.of("a split is reconciled");
+            }
+            Optional<String> account = accounts.whyNotTransferable(split.accountGuid());
+            if(account.isPresent()) {
+                return account;
+            }
+            if(!accounts.get(split.accountGuid()).commodity().guid().equals(currencyGuid)
+                    || split.value().compareTo(split.quantity()) != 0) {
+                return Optional.of("it mixes commodities");
+            }
+            if(split.value().isZero()) {
+                return Optional.of("it moves nothing");
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static String likeEscape(String text) {
+        return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+
+    private static Commodity checkTransfer(Accounts accounts, TransferDraft draft) {
+        Set<String> guids = new LinkedHashSet<>(List.of(draft.fromAccountGuid(), draft.toAccountGuid()));
+        for(String guid : guids) {
+            Optional<String> why = accounts.whyNotTransferable(guid);
+            if(why.isPresent()) {
+                throw new WriteRefusedException(Reason.ACCOUNT_NOT_ALLOWED, why.get());
+            }
+        }
+        Commodity from = accounts.get(draft.fromAccountGuid()).commodity();
+        Commodity to = accounts.get(draft.toAccountGuid()).commodity();
+        if(!from.guid().equals(to.guid())) {
+            throw new WriteRefusedException(Reason.MIXED_COMMODITIES,
+                    "from is in " + from.mnemonic() + " but to is in " + to.mnemonic());
+        }
+        try {
+            draft.amount().toFraction(from.fraction());
+        }
+        catch(ArithmeticException e) {
+            throw new WriteRefusedException(Reason.AMOUNT_TOO_PRECISE,
+                    draft.amount().num() + "/" + draft.amount().denom() + " is finer than " + from.mnemonic() + " allows");
+        }
+        return from;
+    }
+
+    private List<AccountNode> visibleChildren(Accounts accounts, String parentGuid,
+                                              Map<String, GncNumeric> balances, Prices prices) {
+        return accounts.children(parentGuid).stream()
+                .filter(row -> !row.hidden())
+                .map(row -> new AccountNode(row.guid(), row.name(), accounts.path(row.guid()), row.type(),
+                        row.commodity(), row.placeholder(),
+                        balances.getOrDefault(row.guid(), zero(row.commodity())),
+                        total(accounts, row, balances, prices),
+                        visibleChildren(accounts, row.guid(), balances, prices)))
+                .toList();
+    }
+
+    // ---------------------------------------------------------------- writes
+
+    /** One grouped aggregate, exact: integer sums per denominator, combined as rationals here. */
+    private Map<String, GncNumeric> balancesBefore(LocalDateTime end) {
+        Map<String, GncNumeric> balances = new HashMap<>();
+        jdbc.sql("""
+                        SELECT s.account_guid, s.quantity_denom, SUM(s.quantity_num) AS quantity
+                        FROM splits s JOIN transactions t ON t.guid = s.tx_guid
+                        WHERE t.post_date < :end
+                        GROUP BY s.account_guid, s.quantity_denom""")
+                .param("end", end)
+                .query(rs -> {
+                    GncNumeric part = new GncNumeric(rs.getBigDecimal("quantity").longValueExact(),
+                            rs.getLong("quantity_denom"));
+                    balances.merge(rs.getString("account_guid"), part, GncNumeric::add);
+                });
+        return balances;
+    }
+
+    /**
+     * One account's balance over the splits matching {@code where}, exact: integer sums per denominator,
+     * combined as rationals here.
+     *
+     * @param where an SQL condition on {@code s} (splits) and {@code t} (transactions), using {@code params}
+     */
+    private GncNumeric balanceOf(String accountGuid, Commodity commodity, String where, Map<String, ?> params) {
+        GncNumeric balance = zero(commodity);
+        for(GncNumeric part : jdbc.sql("SELECT s.quantity_denom, SUM(s.quantity_num) AS quantity "
+                        + "FROM splits s JOIN transactions t ON t.guid = s.tx_guid "
+                        + "WHERE s.account_guid = :account AND " + where + " "
+                        + "GROUP BY s.quantity_denom")
+                .param("account", accountGuid)
+                .params(params)
+                .query((rs, _) -> new GncNumeric(rs.getBigDecimal("quantity").longValueExact(), rs.getLong("quantity_denom")))
+                .list()) {
+            balance = balance.add(part);
+        }
+        return balance;
+    }
+
+    private Map<String, String> notesOf(List<String> txGuids) {
+        Map<String, String> notes = new HashMap<>();
+        jdbc.sql("SELECT obj_guid, string_val FROM slots WHERE name = 'notes' AND obj_guid IN (:txs)")
+                .param("txs", txGuids)
+                .query(rs -> {
+                    notes.put(rs.getString(1), rs.getString(2) == null ? "" : rs.getString(2));
+                });
+        return notes;
+    }
+
+    private List<SplitRow> splitsOf(String txGuid, boolean forUpdate) {
+        return jdbc.sql("SELECT " + SplitRow.COLUMNS + " FROM splits s WHERE s.tx_guid = :tx ORDER BY s.guid"
+                        + (forUpdate ? " FOR UPDATE" : ""))
+                .param("tx", txGuid)
+                .query(SplitRow.MAPPER)
+                .list();
+    }
+
+    /**
      * Runs a write in one DB transaction behind the lock and schema checks. {@code LOCK TABLE … IN SHARE MODE}
      * makes a desktop that opens the book meanwhile wait for the commit instead of slipping in after the check.
      */
@@ -503,12 +530,12 @@ public final class GnuCashBook {
         return transactions.execute(_ -> {
             jdbc.sql("LOCK TABLE gnclock IN SHARE MODE").update();
             Optional<LockHolder> holder = jdbc.sql("SELECT hostname, pid FROM gnclock").query(LOCK_MAPPER).list().stream().findFirst();
-            if (holder.isPresent()) {
+            if(holder.isPresent()) {
                 throw new WriteRefusedException(Reason.LOCKED,
                         "Locked by " + holder.get().hostname() + " (PID " + holder.get().pid() + ")");
             }
             SchemaStatus schema = schemaStatus();
-            if (!schema.known()) {
+            if(!schema.known()) {
                 throw new WriteRefusedException(Reason.UNKNOWN_SCHEMA,
                         "Unknown schema, read-only: " + String.join("; ", schema.differences()));
             }
@@ -524,33 +551,10 @@ public final class GnuCashBook {
                 .orElseThrow(() -> new WriteRefusedException(Reason.NOT_FOUND, "no transaction " + txGuid));
         List<SplitRow> splits = splitsOf(txGuid, true);
         Optional<String> why = whyNotEditable(accounts, currency, splits);
-        if (why.isPresent()) {
+        if(why.isPresent()) {
             throw new WriteRefusedException(Reason.NOT_EDITABLE, "this transaction is left to desktop: " + why.get());
         }
         return splits;
-    }
-
-    private static Commodity checkTransfer(Accounts accounts, TransferDraft draft) {
-        Set<String> guids = new LinkedHashSet<>(List.of(draft.fromAccountGuid(), draft.toAccountGuid()));
-        for (String guid : guids) {
-            Optional<String> why = accounts.whyNotTransferable(guid);
-            if (why.isPresent()) {
-                throw new WriteRefusedException(Reason.ACCOUNT_NOT_ALLOWED, why.get());
-            }
-        }
-        Commodity from = accounts.get(draft.fromAccountGuid()).commodity();
-        Commodity to = accounts.get(draft.toAccountGuid()).commodity();
-        if (!from.guid().equals(to.guid())) {
-            throw new WriteRefusedException(Reason.MIXED_COMMODITIES,
-                    "from is in " + from.mnemonic() + " but to is in " + to.mnemonic());
-        }
-        try {
-            draft.amount().toFraction(from.fraction());
-        } catch (ArithmeticException e) {
-            throw new WriteRefusedException(Reason.AMOUNT_TOO_PRECISE,
-                    draft.amount().num() + "/" + draft.amount().denom() + " is finer than " + from.mnemonic() + " allows");
-        }
-        return from;
     }
 
     private LocalDate today() {

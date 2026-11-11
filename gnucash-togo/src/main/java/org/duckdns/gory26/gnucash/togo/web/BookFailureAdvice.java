@@ -39,7 +39,7 @@ class BookFailureAdvice {
     @ExceptionHandler({DataAccessException.class, TransactionException.class})
     @Nullable ModelAndView bookFailed(Exception e, HttpServletRequest request, HttpServletResponse response) throws Exception {
         BookFailure failure = BookFailure.of(e);
-        if (failure == null) {
+        if(failure == null) {
             throw e;
         }
 
@@ -47,11 +47,11 @@ class BookFailureAdvice {
         String user = authentication == null ? null : authentication.getName();
         boolean htmx = request.getHeader("HX-Request") != null;
 
-        if (failure == BookFailure.LOGIN_REFUSED) {
+        if(failure == BookFailure.LOGIN_REFUSED) {
             log.warn("The book refused the login of {}; logged out", user);
             closer.logout(request, response, authentication);
             new SecurityContextLogoutHandler().logout(request, response, authentication);
-            if (htmx) {
+            if(htmx) {
                 response.setHeader("HX-Redirect", REFUSED_LOGIN_URL);
                 return null;
             }
@@ -60,7 +60,7 @@ class BookFailureAdvice {
         }
 
         log.warn("Cannot reach the book for {}: {}", user, NestedExceptionUtils.getMostSpecificCause(e).getMessage());
-        if (htmx) {
+        if(htmx) {
             // htmx 2 swaps nothing on an error status, so 200 and point the swap at the banners instead
             // of the element's own target: the page, and anything typed into it, stays as it was.
             response.setHeader("HX-Retarget", "#banners");

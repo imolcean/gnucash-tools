@@ -21,6 +21,38 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class ConnectionLeakTest {
 
+    /** Counts connections handed out and not yet closed. */
+    @NullMarked
+    private static final class CountingDataSource extends DelegatingDataSource {
+
+        private final AtomicInteger open = new AtomicInteger();
+
+        CountingDataSource(DataSource target) {
+            super(target);
+        }
+
+        @Override
+        public Connection getConnection() throws SQLException {
+            Connection connection = super.getConnection();
+            open.incrementAndGet();
+            return (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(), new Class<?>[]{Connection.class},
+                    (_, method, args) -> {
+                        if(method.getName().equals("close") && !connection.isClosed()) {
+                            open.decrementAndGet();
+                        }
+                        try {
+                            return method.invoke(connection, args);
+                        }
+                        catch(InvocationTargetException e) {
+                            throw e.getCause();
+                        }
+                    });
+        }
+
+        int open() {
+            return open.get();
+        }
+    }
     private final CountingDataSource db = new CountingDataSource(SampleBook.freshCopy());
     private final GnuCashBook book = new GnuCashBook(db, SampleBook.TODAY);
 
@@ -48,37 +80,5 @@ class ConnectionLeakTest {
         book.delete(tx);
 
         assertThat(db.open()).isZero();
-    }
-
-    /** Counts connections handed out and not yet closed. */
-    @NullMarked
-    private static final class CountingDataSource extends DelegatingDataSource {
-
-        private final AtomicInteger open = new AtomicInteger();
-
-        CountingDataSource(DataSource target) {
-            super(target);
-        }
-
-        int open() {
-            return open.get();
-        }
-
-        @Override
-        public Connection getConnection() throws SQLException {
-            Connection connection = super.getConnection();
-            open.incrementAndGet();
-            return (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(), new Class<?>[]{Connection.class},
-                    (_, method, args) -> {
-                        if (method.getName().equals("close") && !connection.isClosed()) {
-                            open.decrementAndGet();
-                        }
-                        try {
-                            return method.invoke(connection, args);
-                        } catch (InvocationTargetException e) {
-                            throw e.getCause();
-                        }
-                    });
-        }
     }
 }

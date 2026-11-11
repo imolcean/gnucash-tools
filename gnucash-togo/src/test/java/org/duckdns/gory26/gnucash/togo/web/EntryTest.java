@@ -28,6 +28,18 @@ class EntryTest extends AppTest {
 
     private MockHttpSession session;
 
+    private static void assertEveryHtmxElementInTheFormSetsItsSwap(String page, int atLeast) {
+        String form = page.substring(page.indexOf("<form id=\"entry-form\""), page.lastIndexOf("</form>"));
+        Matcher tags = Pattern.compile("<[a-z]+\\s[^>]*hx-(?:get|post)=[^>]*>").matcher(form);
+        assertThat(tags.find()).as("the form itself").isTrue();
+        int checked = 0;
+        while(tags.find()) {
+            assertThat(tags.group()).as("element inside the form").contains("hx-swap=");
+            checked++;
+        }
+        assertThat(checked).isGreaterThanOrEqualTo(atLeast);
+    }
+
     @BeforeEach
     void logIn() throws Exception {
         session = login();
@@ -289,18 +301,6 @@ class EntryTest extends AppTest {
         assertEveryHtmxElementInTheFormSetsItsSwap(page, 9);
     }
 
-    private static void assertEveryHtmxElementInTheFormSetsItsSwap(String page, int atLeast) {
-        String form = page.substring(page.indexOf("<form id=\"entry-form\""), page.lastIndexOf("</form>"));
-        Matcher tags = Pattern.compile("<[a-z]+\\s[^>]*hx-(?:get|post)=[^>]*>").matcher(form);
-        assertThat(tags.find()).as("the form itself").isTrue();
-        int checked = 0;
-        while (tags.find()) {
-            assertThat(tags.group()).as("element inside the form").contains("hx-swap=");
-            checked++;
-        }
-        assertThat(checked).isGreaterThanOrEqualTo(atLeast);
-    }
-
     @Test
     void todayIsTheBooksToday() throws Exception {
         assertThat(fragment(get("/entry/today"))).contains("value=\"2026-11-04\"");
@@ -319,7 +319,7 @@ class EntryTest extends AppTest {
         fields.put("to", SampleBook.GROCERIES);
         fields.put("toLabel", "Expenses:Food:Groceries");
         fields.put("notes", "with Bob");
-        for (int i = 0; i < overrides.length; i += 2) {
+        for(int i = 0; i < overrides.length; i += 2) {
             fields.put(overrides[i], overrides[i + 1]);
         }
         MockHttpServletRequestBuilder request = post("/").param("tags", "Tag 1", "Tag 2");

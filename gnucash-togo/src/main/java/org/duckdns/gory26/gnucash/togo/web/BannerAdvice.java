@@ -19,7 +19,7 @@ class BannerAdvice {
     @ModelAttribute
     void banners(@AuthenticationPrincipal Session session, HttpServletRequest request, Model model) {
         model.addAttribute("path", request.getRequestURI());
-        if (session == null) {
+        if(session == null) {
             return;
         }
         LockHolder lock = session.book().lock().orElse(null);

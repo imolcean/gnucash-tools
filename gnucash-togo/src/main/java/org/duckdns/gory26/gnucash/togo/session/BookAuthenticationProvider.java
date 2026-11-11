@@ -34,7 +34,7 @@ public class BookAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public Authentication authenticate(Authentication login) throws AuthenticationException {
-        if (!db.configured()) {
+        if(!db.configured()) {
             throw new AuthenticationServiceException("GNUCASH_DB_HOST and GNUCASH_DB_NAME are not set");
         }
         String username = login.getName();
@@ -45,8 +45,9 @@ public class BookAuthenticationProvider implements AuthenticationProvider {
             Session session = sessions.open(username, password);
             log.info("Login ok: {} from {}, pool {}", username, from, session.poolName());
             return UsernamePasswordAuthenticationToken.authenticated(session, null, List.of());
-        } catch (PoolInitializationException e) {
-            if (BookFailure.of(e) == BookFailure.LOGIN_REFUSED) {
+        }
+        catch(PoolInitializationException e) {
+            if(BookFailure.of(e) == BookFailure.LOGIN_REFUSED) {
                 log.warn("Login refused: {} from {}", username, from);
                 throw new BadCredentialsException("Postgres refused the login", e);
             }
@@ -56,15 +57,15 @@ public class BookAuthenticationProvider implements AuthenticationProvider {
         }
     }
 
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
+    }
+
     /** The device's IP, which the form login filter puts into the authentication's details. */
     private static String clientAddress(Authentication login) {
         return login.getDetails() instanceof WebAuthenticationDetails details && details.getRemoteAddress() != null
                 ? details.getRemoteAddress()
                 : "unknown";
-    }
-
-    @Override
-    public boolean supports(Class<?> authentication) {
-        return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }

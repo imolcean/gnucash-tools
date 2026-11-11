@@ -10,9 +10,7 @@ import com.tngtech.archunit.lang.ArchRule;
 import java.util.List;
 import java.util.Set;
 
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noCodeUnits;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
 
 /** ADR-0003: amounts are exact rationals, so floating point has no place in the book's API or state. */
 @AnalyzeClasses(packages = "org.duckdns.gory26.gnucash.book", importOptions = ImportOption.DoNotIncludeTests.class)

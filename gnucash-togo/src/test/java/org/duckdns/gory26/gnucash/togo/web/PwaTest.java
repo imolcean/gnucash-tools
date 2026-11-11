@@ -22,7 +22,7 @@ class PwaTest extends AppTest {
 
     @Test
     void theIconsArePublic() throws Exception {
-        for (String icon : new String[]{"icon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "favicon-32.png"}) {
+        for(String icon : new String[]{"icon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "favicon-32.png"}) {
             mvc.perform(get("/icons/" + icon)).andExpect(status().isOk());
         }
     }

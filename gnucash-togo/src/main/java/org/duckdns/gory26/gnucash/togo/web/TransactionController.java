@@ -10,11 +10,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.Optional;
@@ -37,13 +33,18 @@ class TransactionController {
         this.fmt = fmt;
     }
 
+    /** Only a register path; anything else could send the user off-site. */
+    static String safe(String returnTo) {
+        return REGISTER.matcher(returnTo).matches() ? returnTo : "/accounts";
+    }
+
     @GetMapping("/transactions/{tx}/edit")
     String edit(@AuthenticationPrincipal Session session, @PathVariable String tx,
                 @RequestParam(defaultValue = "") String returnTo, Model model, HttpServletResponse response) {
         GnuCashBook book = session.book();
         Optional<TransferDraft> draft = book.draft(tx);
         model.addAttribute("returnTo", safe(returnTo));
-        if (draft.isEmpty()) {
+        if(draft.isEmpty()) {
             response.setStatus(HttpStatus.NOT_FOUND.value());
             return "not-editable";
         }
@@ -69,12 +70,13 @@ class TransactionController {
         GnuCashBook book = session.book();
         form.setTxGuid(tx);
         EntryCheck check = EntryCheck.of(form, binding, book);
-        if (!check.errors().isEmpty()) {
+        if(!check.errors().isEmpty()) {
             return view.fragment(form, book, model, check.errors());
         }
         try {
             book.update(tx, check.draft().orElseThrow());
-        } catch (WriteRefusedException e) {
+        }
+        catch(WriteRefusedException e) {
             model.addAttribute("refusal", e.getMessage());
             return view.fragment(form, book, model, Map.of());
         }
@@ -88,7 +90,8 @@ class TransactionController {
         form.setTxGuid(tx);
         try {
             book.delete(tx);
-        } catch (WriteRefusedException e) {
+        }
+        catch(WriteRefusedException e) {
             model.addAttribute("refusal", e.getMessage());
             return view.fragment(form, book, model, Map.of());
         }
@@ -98,10 +101,5 @@ class TransactionController {
     private String back(EntryForm form, HttpServletResponse response) {
         response.setHeader("HX-Redirect", safe(form.getReturnTo()));
         return "fragments/suggestions :: none";
-    }
-
-    /** Only a register path; anything else could send the user off-site. */
-    static String safe(String returnTo) {
-        return REGISTER.matcher(returnTo).matches() ? returnTo : "/accounts";
     }
 }

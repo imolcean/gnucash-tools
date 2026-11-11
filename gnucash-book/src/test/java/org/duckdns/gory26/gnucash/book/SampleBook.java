@@ -90,9 +90,10 @@ public final class SampleBook {
      * For callers that need a fixed database name, such as an app configured once per test context.
      */
     public static void recreate(String database) {
-        try (Connection c = DriverManager.getConnection(url("postgres"), USER, PASSWORD)) {
+        try(Connection c = DriverManager.getConnection(url("postgres"), USER, PASSWORD)) {
             c.createStatement().execute("DROP DATABASE IF EXISTS " + database + " WITH (FORCE)");
-        } catch (SQLException e) {
+        }
+        catch(SQLException e) {
             throw new IllegalStateException("cannot drop " + database, e);
         }
         createDatabase(database);
@@ -104,15 +105,16 @@ public final class SampleBook {
      */
     public static void grantAppRole(String database, String role, String password) {
         JdbcClient cluster = JdbcClient.create(dataSource("postgres", USER, PASSWORD));
-        if (cluster.sql("SELECT COUNT(*) FROM pg_roles WHERE rolname = :role").param("role", role)
+        if(cluster.sql("SELECT COUNT(*) FROM pg_roles WHERE rolname = :role").param("role", role)
                 .query(Integer.class).single() == 0) {
             cluster.sql("CREATE ROLE " + role + " LOGIN PASSWORD '" + password + "'").update();
-        } else {
+        }
+        else {
             // Roles belong to the whole cluster; a test may have changed the password.
             cluster.sql("ALTER ROLE " + role + " LOGIN PASSWORD '" + password + "'").update();
         }
         JdbcClient book = JdbcClient.create(dataSource(database, USER, PASSWORD));
-        for (String grant : List.of(
+        for(String grant : List.of(
                 "GRANT CONNECT ON DATABASE " + database + " TO " + role,
                 "GRANT USAGE ON SCHEMA public TO " + role,
                 "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " + role,
@@ -134,17 +136,19 @@ public final class SampleBook {
     @SuppressWarnings("BusyWait") // a bounded retry, not a poll
     private static void createDatabase(String name) {
         // The template must have no open sessions; the container's start-up probe may still be closing one.
-        for (int attempt = 1; ; attempt++) {
-            try (Connection c = DriverManager.getConnection(url("postgres"), USER, PASSWORD)) {
+        for(int attempt = 1; ; attempt++) {
+            try(Connection c = DriverManager.getConnection(url("postgres"), USER, PASSWORD)) {
                 c.createStatement().execute("CREATE DATABASE " + name + " TEMPLATE " + TEMPLATE);
                 return;
-            } catch (SQLException e) {
-                if (attempt == 10 || !"55006".equals(e.getSQLState())) {
+            }
+            catch(SQLException e) {
+                if(attempt == 10 || !"55006".equals(e.getSQLState())) {
                     throw new IllegalStateException("cannot copy the sample book", e);
                 }
                 try {
                     Thread.sleep(200);
-                } catch (InterruptedException ie) {
+                }
+                catch(InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     throw new IllegalStateException(ie);
                 }

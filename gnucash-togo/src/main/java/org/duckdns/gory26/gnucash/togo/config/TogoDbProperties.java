@@ -13,7 +13,9 @@ import java.time.Duration;
  *                          unreachable
  */
 @ConfigurationProperties("togo.db")
-public record TogoDbProperties(String host, @DefaultValue("5432") int port, String name,
+public record TogoDbProperties(String host,
+                               @DefaultValue("5432") int port,
+                               String name,
                                @DefaultValue("5s") Duration connectionTimeout) {
 
     public String jdbcUrl() {

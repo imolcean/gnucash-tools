@@ -42,7 +42,7 @@ final class BookWriter {
                 .param("enter", enterDate)
                 .param("description", tx.description())
                 .update();
-        for (Split split : tx.splits()) {
+        for(Split split : tx.splits()) {
             insertSplit(newGuid(), txGuid, split, currency.fraction());
         }
         insertDatePosted(txGuid, tx.postDate());
@@ -71,7 +71,7 @@ final class BookWriter {
                 .param("date", tx.postDate())
                 .param("tx", txGuid)
                 .update();
-        if (dated == 0) {
+        if(dated == 0) {
             insertDatePosted(txGuid, tx.postDate());
         }
         jdbc.sql("DELETE FROM slots WHERE obj_guid = :tx AND name = 'notes'").param("tx", txGuid).update();
@@ -136,7 +136,7 @@ final class BookWriter {
     }
 
     private void insertNotes(String txGuid, String notes) {
-        if (notes.isBlank()) {
+        if(notes.isBlank()) {
             return;
         }
         jdbc.sql("""

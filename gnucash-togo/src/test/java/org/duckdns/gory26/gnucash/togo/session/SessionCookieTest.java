@@ -33,7 +33,7 @@ class SessionCookieTest {
     void theSessionCookieOutlivesTheBrowser() throws Exception {
         // The login page stores its CSRF token in the session, so it already sets the cookie.
         HttpResponse<Void> page;
-        try (HttpClient http = HttpClient.newHttpClient()) {
+        try(HttpClient http = HttpClient.newHttpClient()) {
             page = http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login")).build(),
                     HttpResponse.BodyHandlers.discarding());
         }

@@ -13,6 +13,10 @@ class TransferDraftTest {
     private static final String CASH = "cash-guid";
     private static final String GROCERIES = "groceries-guid";
 
+    private static TransferDraft fromCash(GncNumeric amount, String to, String notes) {
+        return new TransferDraft(LocalDate.of(2026, 11, 3), List.of(), "Storage room", amount, CASH, to, notes);
+    }
+
     @Test
     void transferBecomesTwoSplitsMovingTheAmountFromOneAccountToTheOther() {
         TransferDraft draft = new TransferDraft(LocalDate.of(2026, 11, 3), List.of("Tag 1"), "Rewe again",
@@ -48,9 +52,5 @@ class TransferDraftTest {
     void cannotTransferToTheSameAccount() {
         assertThatThrownBy(() -> fromCash(new GncNumeric(766, 100), CASH, ""))
                 .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    private static TransferDraft fromCash(GncNumeric amount, String to, String notes) {
-        return new TransferDraft(LocalDate.of(2026, 11, 3), List.of(), "Storage room", amount, CASH, to, notes);
     }
 }

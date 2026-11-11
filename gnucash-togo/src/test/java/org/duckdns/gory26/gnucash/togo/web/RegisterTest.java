@@ -17,6 +17,12 @@ class RegisterTest extends AppTest {
     static final String NNBSP = " ";
     static final String NBSP = " ";
 
+    /** The "Load more" URL on a page or fragment, or null on the last page. */
+    static String loadMore(String html) {
+        Matcher m = Pattern.compile("hx-get=\"([^\"]+)\"").matcher(html);
+        return m.find() ? m.group(1).replace("&amp;", "&") : null;
+    }
+
     @Test
     void theHeaderShowsThePathAndThePresentBalance() throws Exception {
         String page = cash();
@@ -81,11 +87,5 @@ class RegisterTest extends AppTest {
 
     private String cash() throws Exception {
         return mvc.perform(get("/accounts/" + SampleBook.CASH).session(login())).andReturn().getResponse().getContentAsString();
-    }
-
-    /** The "Load more" URL on a page or fragment, or null on the last page. */
-    static String loadMore(String html) {
-        Matcher m = Pattern.compile("hx-get=\"([^\"]+)\"").matcher(html);
-        return m.find() ? m.group(1).replace("&amp;", "&") : null;
     }
 }

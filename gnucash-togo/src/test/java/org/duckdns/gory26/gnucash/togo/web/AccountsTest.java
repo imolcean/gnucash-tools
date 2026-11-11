@@ -17,6 +17,14 @@ class AccountsTest extends AppTest {
     private static final String NNBSP = " ";
     private static final String NBSP = " ";
 
+    /** The account's own line: from its data-path attribute up to its children or the next account. */
+    private static String line(String page, String path) {
+        Matcher m = Pattern.compile("data-path=\"" + Pattern.quote(path) + "\"[^>]*>(.*?)(?:data-path=|class=\"kids\"|</main>)",
+                Pattern.DOTALL).matcher(page);
+        assertThat(m.find()).as("account %s on the page", path).isTrue();
+        return m.group(1);
+    }
+
     @Test
     void showsThePresentBalancesDesktopShows() throws Exception {
         String page = accounts(login(), "?hideZero=false");
@@ -75,13 +83,5 @@ class AccountsTest extends AppTest {
 
     private String accounts(MockHttpSession session, String query) throws Exception {
         return mvc.perform(get("/accounts" + query).session(session)).andReturn().getResponse().getContentAsString();
-    }
-
-    /** The account's own line: from its data-path attribute up to its children or the next account. */
-    private static String line(String page, String path) {
-        Matcher m = Pattern.compile("data-path=\"" + Pattern.quote(path) + "\"[^>]*>(.*?)(?:data-path=|class=\"kids\"|</main>)",
-                Pattern.DOTALL).matcher(page);
-        assertThat(m.find()).as("account %s on the page", path).isTrue();
-        return m.group(1);
     }
 }

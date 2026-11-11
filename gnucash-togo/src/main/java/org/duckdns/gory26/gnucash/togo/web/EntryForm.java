@@ -29,26 +29,6 @@ public class EntryForm {
     private String txGuid = "";
     private String returnTo = "";
 
-    static EntryForm empty(LocalDate date) {
-        EntryForm form = new EntryForm();
-        form.setDate(date);
-        return form;
-    }
-
-    /** The chips plus any text left in the tag box, trimmed, without blanks or repeats. */
-    List<String> allTags() {
-        LinkedHashSet<String> all = new LinkedHashSet<>();
-        for (String t : tags) {
-            if (!t.isBlank()) {
-                all.add(t.strip());
-            }
-        }
-        if (!tag.isBlank()) {
-            all.add(tag.strip());
-        }
-        return List.copyOf(all);
-    }
-
     public boolean isEditing() {
         return !txGuid.isBlank();
     }
@@ -149,7 +129,27 @@ public class EntryForm {
         this.returnTo = clean(returnTo);
     }
 
+    static EntryForm empty(LocalDate date) {
+        EntryForm form = new EntryForm();
+        form.setDate(date);
+        return form;
+    }
+
     private static String clean(String value) {
         return value == null ? "" : value.strip();
+    }
+
+    /** The chips plus any text left in the tag box, trimmed, without blanks or repeats. */
+    List<String> allTags() {
+        LinkedHashSet<String> all = new LinkedHashSet<>();
+        for(String t : tags) {
+            if(!t.isBlank()) {
+                all.add(t.strip());
+            }
+        }
+        if(!tag.isBlank()) {
+            all.add(tag.strip());
+        }
+        return List.copyOf(all);
     }
 }

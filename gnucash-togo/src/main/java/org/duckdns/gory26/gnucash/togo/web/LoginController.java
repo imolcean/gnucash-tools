@@ -14,7 +14,7 @@ class LoginController {
     /** Tells a wrong password apart from a book that can't be reached, and says why a session ended. */
     @GetMapping("/login")
     String login(HttpServletRequest request, Model model) {
-        if (request.getParameterMap().containsKey("error")) {
+        if(request.getParameterMap().containsKey("error")) {
             HttpSession session = request.getSession(false);
             Object failure = session == null ? null : session.getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
             boolean refused = failure == null || failure instanceof BadCredentialsException;

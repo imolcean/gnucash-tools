@@ -3,11 +3,11 @@ package org.duckdns.gory26.gnucash.togo.session;
 import org.duckdns.gory26.gnucash.togo.AppTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.logging.LogLevel;
 import org.springframework.boot.logging.LoggingSystem;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -57,7 +57,8 @@ class LoginTest extends AppTest {
         logging.setLogLevel(logger, LogLevel.INFO);
         try {
             mvc.perform(formLogin("/login").user(ROLE).password(PASSWORD)).andExpect(authenticated());
-        } finally {
+        }
+        finally {
             logging.setLogLevel(logger, null);
         }
 

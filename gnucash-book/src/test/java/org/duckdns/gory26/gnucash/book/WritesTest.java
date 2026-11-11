@@ -17,11 +17,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class WritesTest {
 
-    private static final LocalDate NOV_3 = LocalDate.of(2026, 11, 3);
-
-    private final DataSource db = SampleBook.freshCopy();
-    private final JdbcClient sql = JdbcClient.create(db);
-
     /** ADR-0007: the app's rows equal the rows desktop wrote for the same entry, minus GUIDs, enter date and slot ids. */
     @Nested
     class Golden {
@@ -195,7 +190,7 @@ class WritesTest {
         void placeholderHiddenTradingAndUnknownAccountsAreRefused() {
             GnuCashBook book = SampleBook.unlocked(db);
 
-            for (String account : List.of(SampleBook.FOOD, SampleBook.VISIBLE_NESTED, SampleBook.HIDDEN,
+            for(String account : List.of(SampleBook.FOOD, SampleBook.VISIBLE_NESTED, SampleBook.HIDDEN,
                     SampleBook.TRADING_EUR, "0".repeat(32))) {
                 assertRefused(() -> book.insert(new TransferDraft(NOV_3, List.of(), "x", eur("1.00"),
                         SampleBook.CASH, account, "")), Reason.ACCOUNT_NOT_ALLOWED);
@@ -238,6 +233,9 @@ class WritesTest {
             assertThat(book.suggestTags("")).isNotEmpty();
         }
     }
+    private static final LocalDate NOV_3 = LocalDate.of(2026, 11, 3);
+    private final DataSource db = SampleBook.freshCopy();
+    private final JdbcClient sql = JdbcClient.create(db);
 
     // ---------------------------------------------------------------- helpers
 

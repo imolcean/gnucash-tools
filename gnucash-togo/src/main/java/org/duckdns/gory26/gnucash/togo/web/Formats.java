@@ -58,16 +58,6 @@ public class Formats {
         return WEEKDAY.format(date);
     }
 
-    private String format(GncNumeric amount, Commodity commodity, boolean plus) {
-        BigDecimal value = decimal(amount, commodity);
-        String digits = value.abs().toPlainString();
-        int point = digits.indexOf('.');
-        String integer = point < 0 ? digits : digits.substring(0, point);
-        String fraction = point < 0 ? "" : digits.substring(point);
-        String sign = value.signum() < 0 ? String.valueOf(MINUS) : plus && value.signum() > 0 ? "+" : "";
-        return sign + group(integer) + fraction + BEFORE_SYMBOL + symbol(commodity);
-    }
-
     /** Padded to the commodity's decimals when its fraction is a power of ten; never rounded. */
     private static BigDecimal decimal(GncNumeric amount, Commodity commodity) {
         BigDecimal value = amount.toBigDecimal();
@@ -78,8 +68,8 @@ public class Formats {
     /** 100 → 2, 1 → 0; -1 when the fraction is not a power of ten. */
     static int decimalsOf(long fraction) {
         int decimals = 0;
-        for (long f = fraction; f > 1; f /= 10) {
-            if (f % 10 != 0) {
+        for(long f = fraction; f > 1; f /= 10) {
+            if(f % 10 != 0) {
                 return -1;
             }
             decimals++;
@@ -91,9 +81,19 @@ public class Formats {
         StringBuilder out = new StringBuilder();
         int lead = integer.length() % 3 == 0 ? 3 : integer.length() % 3;
         out.append(integer, 0, lead);
-        for (int i = lead; i < integer.length(); i += 3) {
+        for(int i = lead; i < integer.length(); i += 3) {
             out.append(GROUP).append(integer, i, i + 3);
         }
         return out.toString();
+    }
+
+    private String format(GncNumeric amount, Commodity commodity, boolean plus) {
+        BigDecimal value = decimal(amount, commodity);
+        String digits = value.abs().toPlainString();
+        int point = digits.indexOf('.');
+        String integer = point < 0 ? digits : digits.substring(0, point);
+        String fraction = point < 0 ? "" : digits.substring(point);
+        String sign = value.signum() < 0 ? String.valueOf(MINUS) : plus && value.signum() > 0 ? "+" : "";
+        return sign + group(integer) + fraction + BEFORE_SYMBOL + symbol(commodity);
     }
 }

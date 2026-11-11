@@ -26,14 +26,11 @@ class BookOutageTest extends AppTest {
 
     /** Hikari hands out a connection used within this window without checking it. */
     private static final long HIKARI_ALIVE_BYPASS_MS = 500;
-
-    /** The cluster as superuser, to stop and start connections to the book. */
-    private final JdbcClient cluster = JdbcClient.create(SampleBook.dataSource("postgres", "postgres", "postgres"));
-
     /** The warnings these outages cause on purpose; elsewhere in the build they would mean something. */
     private static final List<String> EXPECTED_WARNINGS = List.of(
             "com.zaxxer.hikari.pool.PoolBase", BookFailureAdvice.class.getName());
-
+    /** The cluster as superuser, to stop and start connections to the book. */
+    private final JdbcClient cluster = JdbcClient.create(SampleBook.dataSource("postgres", "postgres", "postgres"));
     private final LoggingSystem logging = LoggingSystem.get(BookOutageTest.class.getClassLoader());
 
     private MockHttpSession session;
@@ -80,8 +77,8 @@ class BookOutageTest extends AppTest {
         bookDown();
 
         MockHttpServletResponse save = mvc.perform(post("/").session(session).with(csrf().asHeader())
-                .header("HX-Request", "true").param("date", "2026-11-03").param("text", "Lunch")
-                .param("amount", "1").param("from", SampleBook.CASH).param("to", SampleBook.GROCERIES))
+                        .header("HX-Request", "true").param("date", "2026-11-03").param("text", "Lunch")
+                        .param("amount", "1").param("from", SampleBook.CASH).param("to", SampleBook.GROCERIES))
                 .andReturn().getResponse();
 
         assertThat(save.getStatus()).isEqualTo(200);

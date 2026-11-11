@@ -1,15 +1,6 @@
 package org.duckdns.gory26.gnucash.togo.web;
 
-import org.duckdns.gory26.gnucash.book.AccountChoice;
-import org.duckdns.gory26.gnucash.book.AccountSummary;
-import org.duckdns.gory26.gnucash.book.AmountExpression;
-import org.duckdns.gory26.gnucash.book.GncNumeric;
-import org.duckdns.gory26.gnucash.book.GnuCashBook;
-import org.duckdns.gory26.gnucash.book.InvalidAmountException;
-import org.duckdns.gory26.gnucash.book.QuickFill;
-import org.duckdns.gory26.gnucash.book.TaggedDescription;
-import org.duckdns.gory26.gnucash.book.TransferDraft;
-import org.duckdns.gory26.gnucash.book.WriteRefusedException;
+import org.duckdns.gory26.gnucash.book.*;
 import org.duckdns.gory26.gnucash.togo.session.Session;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -34,6 +25,12 @@ import java.util.Optional;
 @Controller
 class EntryController {
 
+    record Choice(String guid,
+                  String path,
+                  String currency) {
+    }
+    /** Items in a suggestion list: few enough to fit on a phone above its keyboard, with no scroll bar. */
+    static final int SHOWN = 4;
     private final Formats fmt;
     private final Clock clock;
     private final EntryView view;
@@ -43,6 +40,12 @@ class EntryController {
         this.clock = clock;
         this.view = view;
     }
+
+    private static String firstMatch(GnuCashBook book, String typed) {
+        return typed.isBlank() ? "" : book.suggestAccounts(typed).stream().findFirst().map(AccountChoice::guid).orElse("");
+    }
+
+    // ---------------------------------------------------------------- pickers
 
     @GetMapping("/")
     String entry(@AuthenticationPrincipal Session session, Model model) {
@@ -56,13 +59,14 @@ class EntryController {
                 BindingResult binding, Model model) {
         GnuCashBook book = session.book();
         EntryCheck check = EntryCheck.of(form, binding, book);
-        if (!check.errors().isEmpty()) {
+        if(!check.errors().isEmpty()) {
             return view.fragment(form, book, model, check.errors());
         }
         TransferDraft draft = check.draft().orElseThrow();
         try {
             book.insert(draft);
-        } catch (WriteRefusedException e) {
+        }
+        catch(WriteRefusedException e) {
             model.addAttribute("refusal", e.getMessage());
             return view.fragment(form, book, model, check.errors());
         }
@@ -76,11 +80,6 @@ class EntryController {
         return (description.isEmpty() ? "" : description + " · ") + fmt.amount(draft.amount(), from.commodity())
                 + " · " + from.name() + " → " + to.name();
     }
-
-    // ---------------------------------------------------------------- pickers
-
-    /** Items in a suggestion list: few enough to fit on a phone above its keyboard, with no scroll bar. */
-    static final int SHOWN = 4;
 
     @GetMapping("/suggest/tags")
     String tags(@AuthenticationPrincipal Session session, @RequestParam(defaultValue = "") String tag,
@@ -107,7 +106,7 @@ class EntryController {
     @GetMapping("/suggest/accounts")
     String accounts(@AuthenticationPrincipal Session session, @RequestParam String field,
                     @RequestParam Map<String, String> params, Model model) {
-        if (!field.equals("from") && !field.equals("to")) {
+        if(!field.equals("from") && !field.equals("to")) {
             throw new IllegalArgumentException("no such picker: " + field);
         }
         String typed = params.getOrDefault(field + "Label", "");
@@ -121,9 +120,6 @@ class EntryController {
                 .toList());
         model.addAttribute("unpick", !stillPicked && !picked.isBlank());
         return "fragments/suggestions :: accounts";
-    }
-
-    record Choice(String guid, String path, String currency) {
     }
 
     /** Closes a suggestion list when its box loses focus. */
@@ -145,21 +141,23 @@ class EntryController {
                   Model model) {
         Optional<AccountSummary> account = from.isBlank() ? Optional.empty() : session.book().account(from);
         model.addAttribute("fromDecimals", account.map(a -> Formats.decimalsOf(a.commodity().fraction())).orElse(2));
-        if (AmountExpression.isPlain(amount)) {
+        if(AmountExpression.isPlain(amount)) {
             return "fragments/suggestions :: amount";
         }
         long fraction = account.map(a -> a.commodity().fraction()).orElse(100L);
         try {
             GncNumeric result = GncNumeric.of(AmountExpression.evaluate(amount, fraction), fraction);
-            if (done && result.signum() > 0) {
+            if(done && result.signum() > 0) {
                 // the field shows the result now, so the line under it goes
                 model.addAttribute("replace", account.map(a -> fmt.input(result, a.commodity()))
                         .orElseGet(() -> result.toBigDecimal().toPlainString()));
-            } else {
+            }
+            else {
                 model.addAttribute("result", account.map(a -> fmt.amount(result, a.commodity()))
                         .orElseGet(() -> result.toBigDecimal().toPlainString()));
             }
-        } catch (InvalidAmountException e) {
+        }
+        catch(InvalidAmountException e) {
             model.addAttribute("error", EntryCheck.amountError(e.reason()));
         }
         return "fragments/suggestions :: amount";
@@ -181,19 +179,19 @@ class EntryController {
         // The description comes after from, to and amount: fill only what the user hasn't entered yet.
         fill.ifPresent(f -> {
             form.setText(f.text());
-            if (form.getTags().isEmpty()) {
+            if(form.getTags().isEmpty()) {
                 form.setTags(new ArrayList<>(f.tags()));
                 form.setTag("");
             }
-            if (form.getFrom().isEmpty()) {
+            if(form.getFrom().isEmpty()) {
                 form.setFrom(f.fromAccountGuid());
                 form.setFromLabel("");
             }
-            if (form.getTo().isEmpty()) {
+            if(form.getTo().isEmpty()) {
                 form.setTo(f.toAccountGuid());
                 form.setToLabel("");
             }
-            if (form.getAmount().isEmpty()) {
+            if(form.getAmount().isEmpty()) {
                 book.account(form.getFrom())
                         .ifPresent(from -> form.setAmount(fmt.input(f.amount(), from.commodity())));
             }
@@ -206,10 +204,11 @@ class EntryController {
     String pick(@AuthenticationPrincipal Session session, @ModelAttribute("form") EntryForm form,
                 @RequestParam String pick, Model model) {
         String[] parts = pick.split(":", 2);
-        if (parts.length == 2 && parts[0].equals("from")) {
+        if(parts.length == 2 && parts[0].equals("from")) {
             form.setFrom(parts[1]);
             form.setFromLabel("");
-        } else if (parts.length == 2 && parts[0].equals("to")) {
+        }
+        else if(parts.length == 2 && parts[0].equals("to")) {
             form.setTo(parts[1]);
             form.setToLabel("");
         }
@@ -226,17 +225,14 @@ class EntryController {
     String pickFirst(@AuthenticationPrincipal Session session, @ModelAttribute("form") EntryForm form,
                      @RequestParam String first, Model model) {
         GnuCashBook book = session.book();
-        if (first.equals("from")) {
+        if(first.equals("from")) {
             form.setFrom(firstMatch(book, form.getFromLabel()));
             form.setFromLabel("");
-        } else if (first.equals("to")) {
+        }
+        else if(first.equals("to")) {
             form.setTo(firstMatch(book, form.getToLabel()));
             form.setToLabel("");
         }
         return view.fragment(form, book, model, Map.of());
-    }
-
-    private static String firstMatch(GnuCashBook book, String typed) {
-        return typed.isBlank() ? "" : book.suggestAccounts(typed).stream().findFirst().map(AccountChoice::guid).orElse("");
     }
 }

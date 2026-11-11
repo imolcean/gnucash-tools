@@ -27,13 +27,13 @@ public class SessionCloser implements LogoutHandler, ApplicationListener<HttpSes
 
     @Override
     public void onApplicationEvent(HttpSessionDestroyedEvent event) {
-        for (SecurityContext context : event.getSecurityContexts()) {
+        for(SecurityContext context : event.getSecurityContexts()) {
             close(context.getAuthentication());
         }
     }
 
     private void close(@Nullable Authentication authentication) {
-        if (authentication != null && authentication.getPrincipal() instanceof Session session) {
+        if(authentication != null && authentication.getPrincipal() instanceof Session session) {
             sessions.close(session);
         }
     }

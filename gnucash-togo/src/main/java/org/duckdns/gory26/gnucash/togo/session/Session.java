@@ -31,11 +31,6 @@ public final class Session implements Principal, AutoCloseable {
         return book;
     }
 
-    /** Hikari's name for this session's pool, as its own log lines show it. */
-    String poolName() {
-        return pool.getPoolName();
-    }
-
     @Override
     public void close() {
         pool.close();
@@ -44,5 +39,10 @@ public final class Session implements Principal, AutoCloseable {
     @Override
     public String toString() {
         return username;
+    }
+
+    /** Hikari's name for this session's pool, as its own log lines show it. */
+    String poolName() {
+        return pool.getPoolName();
     }
 }

@@ -7,9 +7,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.Assertions.*;
 
 class RegisterTest {
 
@@ -54,7 +52,7 @@ class RegisterTest {
         RegisterPage page = book.register(SampleBook.CASH, 3);
         List<RegisterRow> all = new ArrayList<>(page.rows());
         int pages = 1;
-        while (page.next().isPresent()) {
+        while(page.next().isPresent()) {
             String token = page.next().get().toToken();
             page = book.register(SampleBook.CASH, RegisterCursor.fromToken(token), 3);
             all.addAll(page.rows());

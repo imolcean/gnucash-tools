@@ -12,6 +12,10 @@ class TransactionTest {
 
     private static final LocalDate DAY = LocalDate.of(2026, 11, 3);
 
+    private static Split split(String account, long valueCents, long quantityCents) {
+        return new Split(account, new GncNumeric(valueCents, 100), new GncNumeric(quantityCents, 100));
+    }
+
     @Test
     void splitsWhoseValuesDoNotSumToZeroAreRefused() {
         List<Split> unbalanced = List.of(
@@ -32,9 +36,5 @@ class TransactionTest {
                 split("cash", 2000, 2000));
 
         assertThat(new Transaction(DAY, "Exchange", "", fourSplits).splits()).hasSize(4);
-    }
-
-    private static Split split(String account, long valueCents, long quantityCents) {
-        return new Split(account, new GncNumeric(valueCents, 100), new GncNumeric(quantityCents, 100));
     }
 }

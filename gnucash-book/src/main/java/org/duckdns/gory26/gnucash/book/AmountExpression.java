@@ -40,7 +40,7 @@ public final class AmountExpression {
      * @throws InvalidAmountException if a term can't be taken literally, or for a division by zero
      */
     public static BigDecimal evaluate(String text, long fraction) {
-        if (isPlain(text)) {
+        if(isPlain(text)) {
             return AmountParser.parse(text, fraction); // a plain amount, or a sign the parser refuses
         }
         String s = normalized(text.strip());
@@ -49,13 +49,13 @@ public final class AmountExpression {
         List<Character> operators = new ArrayList<>();
         Matcher m = OPERATOR.matcher(s);
         int start = 0;
-        while (m.find()) {
+        while(m.find()) {
             terms.add(s.substring(start, m.start()));
             operators.add(m.group(1).charAt(0));
             start = m.end();
         }
         terms.add(s.substring(start));
-        if (terms.getFirst().isEmpty() || terms.getLast().isEmpty()) {
+        if(terms.getFirst().isEmpty() || terms.getLast().isEmpty()) {
             return AmountParser.parse(text, fraction); // leading or trailing operator: a sign
         }
 
@@ -65,19 +65,22 @@ public final class AmountExpression {
         BigDecimal productNum = amount(terms.getFirst(), fraction, text);
         BigDecimal productDen = BigDecimal.ONE;
         int sign = 1;
-        for (int i = 0; i < operators.size(); i++) {
+        for(int i = 0; i < operators.size(); i++) {
             char op = operators.get(i);
             String term = terms.get(i + 1);
-            if (op == '*' || op == '/') {
+            if(op == '*' || op == '/') {
                 BigDecimal factor = whole(term, text);
-                if (op == '*') {
+                if(op == '*') {
                     productNum = productNum.multiply(factor);
-                } else if (factor.signum() == 0) {
+                }
+                else if(factor.signum() == 0) {
                     throw new InvalidAmountException(Reason.DIVISION_BY_ZERO, text);
-                } else {
+                }
+                else {
                     productDen = productDen.multiply(factor);
                 }
-            } else {
+            }
+            else {
                 num = num.multiply(productDen).add(productNum.multiply(den).multiply(BigDecimal.valueOf(sign)));
                 den = den.multiply(productDen);
                 sign = op == '+' ? 1 : -1;
@@ -95,14 +98,14 @@ public final class AmountExpression {
     }
 
     private static BigDecimal amount(String term, long fraction, String text) {
-        if (term.isEmpty()) {
+        if(term.isEmpty()) {
             throw new InvalidAmountException(Reason.MALFORMED, text); // two operators in a row
         }
         return AmountParser.parse(term, fraction);
     }
 
     private static BigDecimal whole(String term, String text) {
-        if (!WHOLE.matcher(term).matches()) {
+        if(!WHOLE.matcher(term).matches()) {
             throw new InvalidAmountException(Reason.MALFORMED, text);
         }
         return new BigDecimal(term);
@@ -110,13 +113,14 @@ public final class AmountExpression {
 
     /** num/den rounded half-even to 1/fraction. */
     private static BigDecimal rounded(BigDecimal num, BigDecimal den, long fraction, String text) {
-        if (den.compareTo(BigDecimal.ONE) == 0) {
+        if(den.compareTo(BigDecimal.ONE) == 0) {
             return num; // no division: exact already, every term fits the fraction
         }
         BigDecimal units = num.multiply(BigDecimal.valueOf(fraction)).divide(den, 0, RoundingMode.HALF_EVEN);
         try {
             return units.divide(BigDecimal.valueOf(fraction), MathContext.UNLIMITED); // exact, or throws
-        } catch (ArithmeticException e) {
+        }
+        catch(ArithmeticException e) {
             throw new InvalidAmountException(Reason.TOO_PRECISE, text); // 1/fraction has no decimal form
         }
     }

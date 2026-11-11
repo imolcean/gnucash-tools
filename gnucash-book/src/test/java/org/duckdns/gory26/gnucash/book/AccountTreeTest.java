@@ -22,6 +22,20 @@ class AccountTreeTest {
     private final GnuCashBook book = new GnuCashBook(db, SampleBook.TODAY);
     private final JdbcClient sql = JdbcClient.create(db);
 
+    private static BigDecimal total(List<AccountNode> tree, String path) {
+        return find(tree, path).displayTotal().map(GncNumeric::toBigDecimal).orElseThrow();
+    }
+
+    static AccountNode find(List<AccountNode> tree, String path) {
+        Optional<AccountNode> node = flatten(tree).filter(n -> n.path().equals(path)).findFirst();
+        assertThat(node).as("account %s in the tree", path).isPresent();
+        return node.get();
+    }
+
+    static Stream<AccountNode> flatten(List<AccountNode> nodes) {
+        return nodes.stream().flatMap(n -> Stream.concat(Stream.of(n), flatten(n.children())));
+    }
+
     /** The plan's expected Present balances on 2026-11-04, as desktop shows them. */
     @ParameterizedTest
     @CsvSource({
@@ -132,8 +146,8 @@ class AccountTreeTest {
     @Test
     void anOlderPriceIsIgnored() {
         sql.sql("""
-                INSERT INTO prices VALUES ('00000000000000000000000000000001', :usd, :eur,
-                                           '2026-10-01 10:59:00', 'user:price', 'last', 2, 1)""")
+                        INSERT INTO prices VALUES ('00000000000000000000000000000001', :usd, :eur,
+                                                   '2026-10-01 10:59:00', 'user:price', 'last', 2, 1)""")
                 .param("usd", SampleBook.USD).param("eur", SampleBook.EUR).update();
         usdIntoCashUsd(1000);
 
@@ -174,26 +188,12 @@ class AccountTreeTest {
     private void usdIntoCashUsd(long cents) {
         sql.sql("INSERT INTO transactions VALUES ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', :usd, '', '2026-11-04 10:59:00', '2026-11-04 12:00:00', 'USD gift')")
                 .param("usd", SampleBook.USD).update();
-        for (Object[] split : new Object[][]{{"b1", SampleBook.CASH_USD, cents}, {"b2", SampleBook.TRADING_USD, -cents}}) {
+        for(Object[] split : new Object[][]{{"b1", SampleBook.CASH_USD, cents}, {"b2", SampleBook.TRADING_USD, -cents}}) {
             sql.sql("INSERT INTO splits VALUES (:guid, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', :account, '', '', 'n', '1970-01-01', :v, 100, :v, 100, NULL)")
                     .param("guid", ((String) split[0]).repeat(16))
                     .param("account", split[1])
                     .param("v", split[2])
                     .update();
         }
-    }
-
-    private static BigDecimal total(List<AccountNode> tree, String path) {
-        return find(tree, path).displayTotal().map(GncNumeric::toBigDecimal).orElseThrow();
-    }
-
-    static AccountNode find(List<AccountNode> tree, String path) {
-        Optional<AccountNode> node = flatten(tree).filter(n -> n.path().equals(path)).findFirst();
-        assertThat(node).as("account %s in the tree", path).isPresent();
-        return node.get();
-    }
-
-    static Stream<AccountNode> flatten(List<AccountNode> nodes) {
-        return nodes.stream().flatMap(n -> Stream.concat(Stream.of(n), flatten(n.children())));
     }
 }

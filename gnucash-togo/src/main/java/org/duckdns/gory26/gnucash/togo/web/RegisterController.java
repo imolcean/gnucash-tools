@@ -1,12 +1,6 @@
 package org.duckdns.gory26.gnucash.togo.web;
 
-import org.duckdns.gory26.gnucash.book.AccountSummary;
-import org.duckdns.gory26.gnucash.book.Commodity;
-import org.duckdns.gory26.gnucash.book.GncNumeric;
-import org.duckdns.gory26.gnucash.book.RegisterCursor;
-import org.duckdns.gory26.gnucash.book.RegisterPage;
-import org.duckdns.gory26.gnucash.book.RegisterRow;
-import org.duckdns.gory26.gnucash.book.TaggedDescription;
+import org.duckdns.gory26.gnucash.book.*;
 import org.duckdns.gory26.gnucash.togo.session.Session;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -32,6 +26,34 @@ import java.util.Optional;
 @Controller
 class RegisterController {
 
+    /** A day's header and its rows; {@code header} is false for a day continued from the previous page. */
+    record Day(boolean header,
+               String weekday,
+               String date,
+               boolean future,
+               String balance,
+               boolean negative,
+               List<Item> items) {
+    }
+
+    /**
+     * @param other        the other account's last name, or {@code — split (n) —}
+     * @param otherFull    the other accounts' full paths, for the tooltip
+     * @param reconcileKey the message naming the reconcile state, for its tooltip; null for a state GnuCash doesn't have
+     */
+    record Item(String txGuid,
+                boolean editable,
+                boolean future,
+                List<String> tags,
+                String text,
+                String other,
+                String otherFull,
+                String notes,
+                String amount,
+                boolean negative,
+                String reconcile,
+                String reconcileKey) {
+    }
     private final Formats fmt;
     private final Clock clock;
     private final int pageSize;
@@ -40,6 +62,22 @@ class RegisterController {
         this.fmt = fmt;
         this.clock = clock;
         this.pageSize = pageSize;
+    }
+
+    private static AccountSummary account(Session session, String guid) {
+        return session.book().account(guid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
+
+    /** GnuCash's reconcile states (n, c, y, f, v), each with its message. */
+    private static String reconcileKey(String state) {
+        return switch(state) {
+            case "n" -> "register.reconcile.n";
+            case "c" -> "register.reconcile.c";
+            case "y" -> "register.reconcile.y";
+            case "f" -> "register.reconcile.f";
+            case "v" -> "register.reconcile.v";
+            default -> null;
+        };
     }
 
     @GetMapping("/accounts/{guid}")
@@ -67,42 +105,12 @@ class RegisterController {
         RegisterCursor cursor;
         try {
             cursor = RegisterCursor.fromToken(after);
-        } catch (IllegalArgumentException e) {
+        }
+        catch(IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
         page(session.book().register(guid, cursor, pageSize), account, lastDate.orElse(null), true, model);
         return "register :: more";
-    }
-
-    private static AccountSummary account(Session session, String guid) {
-        return session.book().account(guid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    }
-
-    /** A day's header and its rows; {@code header} is false for a day continued from the previous page. */
-    record Day(boolean header, String weekday, String date, boolean future, String balance, boolean negative,
-               List<Item> items) {
-    }
-
-    /**
-     * @param other     the other account's last name, or {@code — split (n) —}
-     * @param otherFull    the other accounts' full paths, for the tooltip
-     * @param reconcileKey the message naming the reconcile state, for its tooltip; null for a state GnuCash doesn't have
-     */
-    record Item(String txGuid, boolean editable, boolean future, List<String> tags, String text, String other,
-                String otherFull, String notes, String amount, boolean negative, String reconcile,
-                String reconcileKey) {
-    }
-
-    /** GnuCash's reconcile states (n, c, y, f, v), each with its message. */
-    private static String reconcileKey(String state) {
-        return switch (state) {
-            case "n" -> "register.reconcile.n";
-            case "c" -> "register.reconcile.c";
-            case "y" -> "register.reconcile.y";
-            case "f" -> "register.reconcile.f";
-            case "v" -> "register.reconcile.v";
-            default -> null;
-        };
     }
 
     private void page(RegisterPage page, AccountSummary account, LocalDate continuing, boolean more, Model model) {
@@ -111,8 +119,8 @@ class RegisterController {
         List<Day> days = new ArrayList<>();
         LocalDate current = null;
         List<Item> items = null;
-        for (RegisterRow row : page.rows()) {
-            if (!row.date().equals(current)) {
+        for(RegisterRow row : page.rows()) {
+            if(!row.date().equals(current)) {
                 current = row.date();
                 items = new ArrayList<>();
                 GncNumeric endOfDay = account.type().display(row.balance());
@@ -131,7 +139,7 @@ class RegisterController {
     private Item item(RegisterRow row, AccountSummary account, LocalDate today) {
         TaggedDescription description = TaggedDescription.parse(row.description());
         List<String> others = row.otherAccounts();
-        String other = switch (others.size()) {
+        String other = switch(others.size()) {
             case 0 -> "—";
             case 1 -> others.getFirst().substring(others.getFirst().lastIndexOf(':') + 1);
             default -> "— split (" + (others.size() + 1) + ") —";

@@ -28,10 +28,10 @@ class EntryView {
     void prepare(EntryForm form, GnuCashBook book, Model model, Map<String, String> errors) {
         Optional<AccountSummary> from = form.getFrom().isBlank() ? Optional.empty() : book.account(form.getFrom());
         Optional<AccountSummary> to = form.getTo().isBlank() ? Optional.empty() : book.account(form.getTo());
-        if (form.getFromLabel().isBlank()) {
+        if(form.getFromLabel().isBlank()) {
             from.ifPresent(a -> form.setFromLabel(a.path()));
         }
-        if (form.getToLabel().isBlank()) {
+        if(form.getToLabel().isBlank()) {
             to.ifPresent(a -> form.setToLabel(a.path()));
         }
         model.addAttribute("form", form);
