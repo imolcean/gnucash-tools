@@ -13,7 +13,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>fincore</name>
-    <description>fincore domain core and GnuCash tooling</description>
+    <description>Fincore domain model; adapters and tooling for GnuCash, Portfolio Performance, etc.</description>
 
     <modules>
         <module>fincore-core</module>
