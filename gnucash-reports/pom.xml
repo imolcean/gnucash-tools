@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.duckdns.gory26</groupId>
+        <artifactId>fincore-parent</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>gnucash-reports</artifactId>
+    <packaging>jar</packaging>
+    <name>gnucash-reports</name>
+    <description>Sankey reports for GnuCash desktop, written in Guile Scheme</description>
+
+    <properties>
+        <!-- The image the tests render in: GnuCash's command line, Guile and Firefox. Built from docker/Dockerfile
+             and published by .github/workflows/gnucash-reports-image.yml, which reads the name from here. The tag
+             is the GnuCash version and a revision of the Dockerfile; raise the revision with every change to the
+             Dockerfile, because the screenshot baselines belong to one exact image. -->
+        <gnucash.image>ghcr.io/imolcean/fincore-gnucash-cli:5.16-1</gnucash.image>
+        <!-- -Dsankey.baselines.update=true rewrites src/test/resources/baselines from what the tests render. -->
+        <sankey.baselines.update>false</sankey.baselines.update>
+        <!-- Where -Pinstall-desktop copies the reports: GnuCash's user data folder. -->
+        <gnucash.userdata>${env.APPDATA}/GnuCash</gnucash.userdata>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.duckdns.gory26</groupId>
+            <artifactId>gnucash-book</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <!-- SampleBook, from the test-jar above, needs these. -->
+        <dependency>
+            <groupId>org.duckdns.gory26</groupId>
+            <artifactId>gnucash-book</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <!-- The reports are the module's "classes": the jar and the tests' classpath carry fincore-reports/. -->
+        <resources>
+            <resource>
+                <directory>src/main/scheme</directory>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <gnucash.image>${gnucash.image}</gnucash.image>
+                        <sankey.baselines.update>${sankey.baselines.update}</sankey.baselines.update>
+                        <sankey.baselines.dir>${project.basedir}/src/test/resources/baselines</sankey.baselines.dir>
+                        <sankey.output.dir>${project.build.directory}/sankey</sankey.output.dir>
+                        <sankey.scheme.tests.dir>${project.basedir}/src/test/scheme</sankey.scheme.tests.dir>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <!-- What a user installs: gnucash-reports-<version>.zip holding the fincore-reports folder. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>reports-zip</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/assembly/reports-zip.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <attach>false</attach>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- ./mvnw -pl gnucash-reports package -Pinstall-desktop
+             Copies fincore-reports/ into GnuCash's user data folder. It never touches config-user.scm: the line
+             that loads the reports is added by hand, once (README.md). -->
+        <profile>
+            <id>install-desktop</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install-desktop</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${gnucash.userdata}/fincore-reports</outputDirectory>
+                                    <overwrite>true</overwrite>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/scheme/fincore-reports</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

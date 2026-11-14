@@ -19,6 +19,7 @@
         <module>fincore-core</module>
         <module>gnucash-book</module>
         <module>gnucash-togo</module>
+        <module>gnucash-reports</module>
     </modules>
 
     <properties>

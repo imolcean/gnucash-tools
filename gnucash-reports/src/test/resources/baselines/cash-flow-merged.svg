@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="600" viewBox="0 0 1100 600" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="12" data-report="cash-flow" data-money-in="3127.50" data-money-out="816.00" data-difference="2311.50">
+<rect width="1100" height="600" fill="#ffffff"/>
+<g fill-opacity="0.45" stroke="#ffffff" stroke-width="1">
+<path d="M188.4,550.5C369.1,550.5 369.1,471.5 549.8,471.5L549.8,491.1C369.1,491.1 369.1,570 188.4,570Z" fill="#2a78d6"><title>Other → Assets.Cash: €115.00</title></path>
+<path d="M188.4,33C369.1,33 369.1,30 549.8,30L549.8,471.5C369.1,471.5 369.1,474.5 188.4,474.5Z" fill="#2a78d6"><title>Income.Salary → Assets.Cash: €2,600.00</title></path>
+<path d="M188.4,474.5C369.1,474.5 369.1,517.1 549.8,517.1L549.8,585C369.1,585 369.1,542.5 188.4,542.5Z" fill="#eb6834"><title>Income.Salary → Assets.Checking: €400.00</title></path>
+<path d="M188.4,570C369.1,570 369.1,585 549.8,585L549.8,588C369.1,588 369.1,573 188.4,573Z" fill="#eb6834"><title>Other → Assets.Checking: €12.50</title></path>
+<path d="M563.8,152.3C744.5,152.3 744.5,361.1 925.2,361.1L925.2,367.9C744.5,367.9 744.5,159.1 563.8,159.1Z" fill="#2a78d6"><title>Assets.Cash → Other: €40.00</title></path>
+<path d="M563.8,30C744.5,30 744.5,27.7 925.2,27.7L925.2,116.1C744.5,116.1 744.5,118.3 563.8,118.3Z" fill="#2a78d6"><title>Assets.Cash → Expenses.Rent: €520.00</title></path>
+<path d="M563.8,118.3C744.5,118.3 744.5,124.1 925.2,124.1L925.2,158C744.5,158 744.5,152.3 563.8,152.3Z" fill="#2a78d6"><title>Assets.Cash → Expenses.Misc: €200.00</title></path>
+<path d="M563.8,517.1C744.5,517.1 744.5,367.9 925.2,367.9L925.2,377.4C744.5,377.4 744.5,526.6 563.8,526.6Z" fill="#eb6834"><title>Assets.Checking → Other: €56.00</title></path>
+</g>
+<g>
+<rect x="174.4" y="33" width="14" height="509.5" fill="#898781"><title>Income.Salary: €3,000.00</title></rect>
+<rect x="174.4" y="550.5" width="14" height="22.5" fill="#898781"><title>Other: €127.50</title></rect>
+<rect x="549.8" y="30" width="14" height="461.1" fill="#2a78d6"><title>Assets.Cash: +€2,715.00 / −€760.00</title></rect>
+<rect x="549.8" y="517.1" width="14" height="70.9" fill="#eb6834"><title>Assets.Checking: +€412.50 / −€56.00</title></rect>
+<rect x="925.2" y="27.7" width="14" height="88.3" fill="#898781"><title>Expenses.Rent: €520.00</title></rect>
+<rect x="925.2" y="124.1" width="14" height="34" fill="#898781"><title>Expenses.Misc: €200.00</title></rect>
+<rect x="925.2" y="361.1" width="14" height="16.3" fill="#898781"><title>Other: €96.00</title></rect>
+</g>
+<g>
+<text x="168.4" y="291.7" text-anchor="end" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Income.Salary €3,000.00</text>
+<text x="168.4" y="291.7" text-anchor="end" fill="#0b0b0b">Income.Salary <tspan fill="#52514e">€3,000.00</tspan></text>
+<text x="168.4" y="565.7" text-anchor="end" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Other €127.50</text>
+<text x="168.4" y="565.7" text-anchor="end" fill="#0b0b0b">Other <tspan fill="#52514e">€127.50</tspan></text>
+<text x="556.8" y="24" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Assets.Cash +€2,715.00 / −€760.00</text>
+<text x="556.8" y="24" text-anchor="middle" fill="#0b0b0b">Assets.Cash <tspan fill="#52514e">+€2,715.00 / −€760.00</tspan></text>
+<text x="549.8" y="511.1" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Assets.Checking +€412.50 / −€56.00</text>
+<text x="549.8" y="511.1" text-anchor="start" fill="#0b0b0b">Assets.Checking <tspan fill="#52514e">+€412.50 / −€56.00</tspan></text>
+<text x="945.2" y="75.9" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Expenses.Rent €520.00</text>
+<text x="945.2" y="75.9" text-anchor="start" fill="#0b0b0b">Expenses.Rent <tspan fill="#52514e">€520.00</tspan></text>
+<text x="945.2" y="145" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Expenses.Misc €200.00</text>
+<text x="945.2" y="145" text-anchor="start" fill="#0b0b0b">Expenses.Misc <tspan fill="#52514e">€200.00</tspan></text>
+<text x="945.2" y="373.3" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Other €96.00</text>
+<text x="945.2" y="373.3" text-anchor="start" fill="#0b0b0b">Other <tspan fill="#52514e">€96.00</tspan></text>
+</g>
+</svg>

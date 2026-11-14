@@ -1,0 +1,105 @@
+;; Saved report configurations for the tests, in the form GnuCash itself writes to this file: a report
+;; whose parent is a report template and whose options generator overrides some of the template's options.
+;; gnucash-cli cannot pass options, but it runs a saved configuration by name (--name), which is how the
+;; tests get fixed dates and a fixed currency.
+;;
+;; Dates are midday in Europe/Berlin (the image's zone): 1793530800 = 2026-11-01, 1796036400 = 2026-11-30.
+
+(let* ((income-statement "0b81a3bdfd504aff849ec2e8630524bc")
+       (cash-flow "f8748b813fab4220ba26e743aedf38da")
+       (income-expense-sankey "5c1f0e8a4b7d4e2f9a3c6d1b8e0f7a21")
+       (cash-flow-sankey "9d2b7c4e1a6f4b3d8e5a0c7f2b9d6e43")
+       (november '(("General" "Start Date" (absolute . 1793530800))
+                   ("General" "End Date" (absolute . 1796036400))))
+       (save
+        (lambda (name guid template template-name settings)
+          (gnc:define-report
+           'version 1
+           'name name
+           'report-guid guid
+           'parent-type template
+           'options-generator
+           (lambda ()
+             (let ((options (gnc:report-template-new-options/report-guid template template-name)))
+               (for-each
+                (lambda (setting)
+                  (let ((option (gnc:lookup-option options (car setting) (cadr setting))))
+                    (if option
+                        (gnc:option-set-value option (caddr setting))
+                        (error "no such option" name setting))))
+                settings)
+               options))
+           'menu-path (list gnc:menuname-custom)
+           'renderer (gnc:report-template-renderer/report-guid template template-name)))))
+
+  (save "Income Statement November" "f1c0de000000000000000000000000b1"
+        income-statement "Income Statement"
+        (append november '(("Commodities" "Report's currency" "EUR"))))
+
+  (save "Income Statement November with trading" "f1c0de000000000000000000000000b2"
+        income-statement "Income Statement"
+        (append november
+                '(("Commodities" "Report's currency" "EUR")
+                  ;; Salary, Groceries, Rent, Misc and the two currency trading accounts of the sample book
+                  ("Accounts" "Accounts" ("3e761d35833d4eca85f77ff8d8757fc3"
+                                          "0e0675c2c42b4c19bffa999c4932f3a8"
+                                          "2122c37fb8ef4129978b6a8aa8cacc41"
+                                          "2be53f0031e0408cafd491c44cdefac5"
+                                          "25d4d674e04b49a798ab2962e86450b5"
+                                          "b6cee3641d1740e3925ffeb28ac37637")))))
+
+  (save "Cash Flow November" "f1c0de000000000000000000000000b3"
+        cash-flow "Cash Flow"
+        (append november '(("General" "Report's currency" "EUR"))))
+
+  ;; The shipped Cash Flow report leaves trading splits out when this option is ON (cash-flow-calc.scm:68), so
+  ;; this is its "without trading". The Cash Flow Sankey's option works the other way round (ADR-0011).
+  (save "Cash Flow November without trading" "f1c0de000000000000000000000000b4"
+        cash-flow "Cash Flow"
+        (append november '(("General" "Report's currency" "EUR")
+                           ("Accounts" "Include Trading Accounts in report" #t))))
+
+  (save "Income Expense Sankey November" "f1c0de000000000000000000000000c1"
+        income-expense-sankey "Income & Expense Sankey"
+        (append november '(("Commodities" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 0))))
+
+  (save "Income Expense Sankey November with trading" "f1c0de000000000000000000000000c2"
+        income-expense-sankey "Income & Expense Sankey"
+        (append november
+                '(("Commodities" "Report's currency" "EUR")
+                  ("Display" "Minimum share (%)" 0)
+                  ("Accounts" "Accounts" ("3e761d35833d4eca85f77ff8d8757fc3"
+                                          "0e0675c2c42b4c19bffa999c4932f3a8"
+                                          "2122c37fb8ef4129978b6a8aa8cacc41"
+                                          "2be53f0031e0408cafd491c44cdefac5"
+                                          "25d4d674e04b49a798ab2962e86450b5"
+                                          "b6cee3641d1740e3925ffeb28ac37637")))))
+
+  (save "Income Expense Sankey November merged" "f1c0de000000000000000000000000c3"
+        income-expense-sankey "Income & Expense Sankey"
+        (append november '(("Commodities" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 5))))
+
+  (save "Income Expense Sankey November two levels" "f1c0de000000000000000000000000c4"
+        income-expense-sankey "Income & Expense Sankey"
+        (append november '(("Commodities" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 0)
+                           ("Accounts" "Levels of Subaccounts" 2))))
+
+  (save "Cash Flow Sankey November" "f1c0de000000000000000000000000d1"
+        cash-flow-sankey "Cash Flow Sankey"
+        (append november '(("General" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 0))))
+
+  ;; The default (option OFF) hides the trading flows; this one shows them.
+  (save "Cash Flow Sankey November with trading" "f1c0de000000000000000000000000d2"
+        cash-flow-sankey "Cash Flow Sankey"
+        (append november '(("General" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 0)
+                           ("Accounts" "Include Trading Accounts in report" #t))))
+
+  (save "Cash Flow Sankey November merged" "f1c0de000000000000000000000000d3"
+        cash-flow-sankey "Cash Flow Sankey"
+        (append november '(("General" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 5)))))

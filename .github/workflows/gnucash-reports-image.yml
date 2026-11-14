@@ -1,0 +1,61 @@
+name: gnucash-reports test image
+
+# Builds the image gnucash-reports' tests render in (GnuCash's command line, Guile, Firefox) and publishes it
+# to GitHub Container Registry under the name in gnucash-reports/pom.xml (property gnucash.image), e.g.
+#   ghcr.io/<owner>/fincore-gnucash-cli:5.16-1
+# The tag is pinned by the tests, so a change to the Dockerfile comes with a new tag in the pom.
+#
+# The workflows that run the tests do not wait for this one: when the tag is not in the registry yet, they
+# build the image themselves from the same Dockerfile (see "GnuCash test image" there).
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'gnucash-reports/docker/**'
+      - 'gnucash-reports/pom.xml'
+      - '.github/workflows/gnucash-reports-image.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - id: image
+        name: Read the image name from the pom
+        run: echo "name=$(./mvnw -B -q -N -f gnucash-reports/pom.xml help:evaluate -Dexpression=gnucash.image -DforceStdout)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v7
+        with:
+          context: gnucash-reports/docker
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.image.outputs.name }}
+          cache-from: type=gha,scope=gnucash-cli
+          cache-to: type=gha,mode=max,scope=gnucash-cli

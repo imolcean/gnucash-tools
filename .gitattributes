@@ -1,2 +1,8 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
+# gnucash-reports: these go into a Linux container or are compared byte for byte with what one wrote.
+*.scm text eol=lf
+/gnucash-reports/docker/Dockerfile text eol=lf
+/gnucash-reports/src/test/resources/gnucash-config/* text eol=lf
+/gnucash-reports/src/test/resources/baselines/*.svg text eol=lf
+/gnucash-reports/src/test/resources/baselines/*.png binary

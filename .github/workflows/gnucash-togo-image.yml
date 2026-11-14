@@ -41,9 +41,10 @@ jobs:
           java-version: '25'
           cache: maven
 
-      # All modules, including the Testcontainers tests against postgres:17.11 (Docker is on the runner).
+      # All modules but gnucash-reports, which has its own workflow (gnucash-reports-test.yml), including the
+      # Testcontainers tests against postgres:17.11 (Docker is on the runner).
       - name: Run tests
-        run: ./mvnw -B verify
+        run: ./mvnw -B verify -pl '!gnucash-reports'
 
       - uses: docker/setup-buildx-action@v4
 
