@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="600" viewBox="0 0 1100 600" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="12" data-report="income-expense" data-revenue="3012.50" data-trading="0.00" data-expenses="801.00" data-net-income="2211.50">
+<rect width="1100" height="600" fill="#ffffff"/>
+<g fill-opacity="0.45" stroke="#ffffff" stroke-width="1">
+<path d="M242,30C340,30 340,50.1 438,50.1L438,578.3C340,578.3 340,558.2 242,558.2Z" fill="#008300"><title>Income → Total: €3,012.50</title></path>
+<path d="M32,29.9C130,29.9 130,30 228,30L228,556C130,556 130,555.9 32,555.9Z" fill="#008300"><title>Salary → Income: €3,000.00</title></path>
+<path d="M32,570.4C130,570.4 130,556 228,556L228,559C130,559 130,573.4 32,573.4Z" fill="#008300"><title>Interest → Income: €12.50</title></path>
+<path d="M242,585C340,585 340,578.3 438,578.3L438,581.3C340,581.3 340,588 242,588Z" fill="#008300"><title>Expenses.Food.Refunds → Total: €15.00</title></path>
+<path d="M452,50.1C550,50.1 550,31 648,31L648,174.1C550,174.1 550,193.2 452,193.2Z" fill="#e34948"><title>Total → Expenses: €816.00</title></path>
+<path d="M662,31C760,31 760,30 858,30L858,121.2C760,121.2 760,122.2 662,122.2Z" fill="#e34948"><title>Expenses → Rent: €520.00</title></path>
+<path d="M662,122.2C760,122.2 760,147.2 858,147.2L858,182.2C760,182.2 760,157.2 662,157.2Z" fill="#e34948"><title>Expenses → Misc: €200.00</title></path>
+<path d="M662,157.2C760,157.2 760,208.2 858,208.2L858,222.3C760,222.3 760,171.3 662,171.3Z" fill="#e34948"><title>Expenses → Food: €80.00</title></path>
+<path d="M872,208.2C970,208.2 970,191.5 1068,191.5L1068,202C970,202 970,218.8 872,218.8Z" fill="#e34948"><title>Food → Restaurants: €60.00</title></path>
+<path d="M872,218.8C970,218.8 970,219 1068,219L1068,222.5C970,222.5 970,222.3 872,222.3Z" fill="#e34948"><title>Food → Groceries: €20.00</title></path>
+<path d="M662,171.3C760,171.3 760,264.3 858,264.3L858,267.3C760,267.3 760,174.3 662,174.3Z" fill="#e34948"><title>Expenses → Leisure: €16.00</title></path>
+<path d="M872,264.3C970,264.3 970,243.3 1068,243.3L1068,246.3C970,246.3 970,267.3 872,267.3Z" fill="#e34948"><title>Leisure → Cinema: €8.00</title></path>
+<path d="M872,267.3C970,267.3 970,267.3 1068,267.3L1068,270.3C970,270.3 970,270.3 872,270.3Z" fill="#e34948"><title>Leisure → Books: €5.00</title></path>
+<path d="M872,270.3C970,270.3 970,291.3 1068,291.3L1068,294.3C970,294.3 970,273.3 872,273.3Z" fill="#e34948"><title>Leisure → Games: €3.00</title></path>
+<path d="M452,193.2C550,193.2 550,200.3 648,200.3L648,588C550,588 550,580.9 452,580.9Z" fill="#008300"><title>Total → Net income: €2,211.50</title></path>
+</g>
+<g>
+<rect x="18" y="29.9" width="14" height="526" fill="#008300"><title>Salary: €3,000.00</title></rect>
+<rect x="18" y="570.4" width="14" height="3" fill="#008300"><title>Interest: €12.50</title></rect>
+<rect x="228" y="30" width="14" height="529" fill="#008300"><title>Income: €3,012.50</title></rect>
+<rect x="228" y="585" width="14" height="3" fill="#008300"><title>Expenses.Food.Refunds: €15.00</title></rect>
+<rect x="438" y="50.1" width="14" height="531.2" fill="#898781"><title>Total: €3,027.50</title></rect>
+<rect x="648" y="31" width="14" height="143.3" fill="#e34948"><title>Expenses: €816.00</title></rect>
+<rect x="648" y="200.3" width="14" height="387.7" fill="#008300"><title>Net income: €2,211.50</title></rect>
+<rect x="858" y="30" width="14" height="91.2" fill="#e34948"><title>Rent: €520.00</title></rect>
+<rect x="858" y="147.2" width="14" height="35.1" fill="#e34948"><title>Misc: €200.00</title></rect>
+<rect x="858" y="208.2" width="14" height="14" fill="#e34948"><title>Food: €80.00</title></rect>
+<rect x="858" y="264.3" width="14" height="9" fill="#e34948"><title>Leisure: €16.00</title></rect>
+<rect x="1068" y="191.5" width="14" height="10.5" fill="#e34948"><title>Restaurants: €60.00</title></rect>
+<rect x="1068" y="219" width="14" height="3.5" fill="#e34948"><title>Groceries: €20.00</title></rect>
+<rect x="1068" y="243.3" width="14" height="3" fill="#e34948"><title>Cinema: €8.00</title></rect>
+<rect x="1068" y="267.3" width="14" height="3" fill="#e34948"><title>Books: €5.00</title></rect>
+<rect x="1068" y="291.3" width="14" height="3" fill="#e34948"><title>Games: €3.00</title></rect>
+</g>
+<g>
+<text x="445" y="44.1" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Total</text>
+<text x="445" y="44.1" text-anchor="middle" fill="#0b0b0b">Total</text>
+<text x="668" y="398.1" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Net income</text>
+<text x="668" y="398.1" text-anchor="start" fill="#0b0b0b">Net income</text>
+</g>
+</svg>

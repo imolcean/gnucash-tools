@@ -32,18 +32,24 @@
 (define optname-min-share (N_ "Minimum share (%)"))
 (define optname-width (N_ "Width"))
 (define optname-height (N_ "Height"))
+(define optname-show-names (N_ "Show account names"))
+(define optname-show-balances (N_ "Show balances"))
+(define optname-sub-colours (N_ "Sub-account colours"))
 
 (define (options-generator)
   (let ((options (gnc-new-optiondb)))
     (gnc:options-add-date-interval!
      options gnc:pagename-general optname-from-date optname-to-date "a")
+    ;; One day by default: the report computes as soon as it is opened, and a long period on a large book
+    ;; takes long (docs/adr/0012).
+    (GncOption-set-default-value
+     (gnc-lookup-option options gnc:pagename-general optname-from-date) '(relative . today))
+    (GncOption-set-default-value
+     (gnc-lookup-option options gnc:pagename-general optname-to-date) '(relative . today))
     (gnc:options-add-currency!
      options gnc:pagename-general optname-report-currency "b")
     (gnc:options-add-price-source!
      options gnc:pagename-general optname-price-source "c" 'pricedb-nearest)
-    (gnc-register-simple-boolean-option
-     options gnc:pagename-general optname-show-full-names "e"
-     (N_ "Show full account names (including parent accounts).") #t)
 
     (gnc:options-add-account-selection!
      options gnc:pagename-accounts
@@ -67,6 +73,22 @@
     (gnc-register-number-range-option
      options gnc:pagename-display optname-height "c"
      (N_ "Height of the diagram in pixels. It grows when the accounts do not fit.") 600 200 4000 50)
+    (gnc-register-simple-boolean-option
+     options gnc:pagename-display optname-show-names "d"
+     (N_ "Show the names of the accounts beside their nodes. Hover over a node for its name either way.") #t)
+    (gnc-register-simple-boolean-option
+     options gnc:pagename-display optname-show-full-names "e"
+     (N_ "Show full account names (including parent accounts).") #t)
+    (gnc-register-simple-boolean-option
+     options gnc:pagename-display optname-show-balances "f"
+     (N_ "Show the amount beside each node. Hover over a node for its amount either way.") #t)
+    (gnc-register-multichoice-option
+     options gnc:pagename-display optname-sub-colours "g"
+     (N_ "Money in is green, money out red; this colours the selected accounts in the middle and their flows.")
+     "same-as-parent"
+     (list (vector 'same-as-parent (N_ "Same as parent"))
+           (vector 'gray (N_ "Gray"))
+           (vector 'distinct (N_ "Distinct colours"))))
 
     (gnc:options-set-default-section options gnc:pagename-general)
     options))
@@ -175,7 +197,10 @@
          (include-trading-accounts (opt gnc:pagename-accounts optname-include-trading-accounts))
          (report-currency (opt gnc:pagename-general optname-report-currency))
          (price-source (opt gnc:pagename-general optname-price-source))
-         (show-full-names? (opt gnc:pagename-general optname-show-full-names))
+         (show-full-names? (opt gnc:pagename-display optname-show-full-names))
+         (show-names? (opt gnc:pagename-display optname-show-names))
+         (show-balances? (opt gnc:pagename-display optname-show-balances))
+         (sub-colours (opt gnc:pagename-display optname-sub-colours))
          (from-date (gnc:time64-start-day-time
                      (gnc:date-option-absolute-time (opt gnc:pagename-general optname-from-date))))
          (to-date (gnc:time64-end-day-time
@@ -258,15 +283,33 @@
                                  (for-each (lambda (guid i) (hash-set! table guid i))
                                            middle (iota (length middle)))
                                  (lambda (guid) (hash-ref table guid))))
+                     ;; Colours: the sources are green, the targets red (docs/adr/0012). The selected
+                     ;; accounts in the middle have no parent to take a colour from, so they are neutral
+                     ;; unless sub-colours asks for distinct ones.
                      (colour (let ((table (make-hash-table)))
                                (for-each
                                 (lambda (guid i)
                                   (hash-set! table guid
-                                             (if (< i (length sankey-palette))
-                                                 (list-ref sankey-palette i)
+                                             (if (eq? sub-colours 'distinct)
+                                                 (list-ref sankey-sub-palette
+                                                           (modulo i (length sankey-sub-palette)))
                                                  sankey-neutral-colour)))
                                 middle (iota (length middle)))
                                (lambda (guid) (hash-ref table guid))))
+                     ;; a ribbon takes its selected account's colour when those are distinct, else the
+                     ;; colour of its outer end, unless everything below in and out is gray
+                     (ribbon-colour (lambda (direction selected)
+                                      (case sub-colours
+                                        ((distinct) (colour selected))
+                                        ((gray) sankey-neutral-colour)
+                                        (else (if (eq? direction 'in) sankey-green sankey-red)))))
+                     ;; What a node shows; the hover text keeps name and amount. Other keeps its name.
+                     (shown (lambda (id label amount-text value colour account?)
+                              (list id
+                                    (if (or show-names? (not account?)) label "")
+                                    (if show-balances? amount-text "")
+                                    value colour
+                                    (string-append label ": " amount-text))))
 
                      ;; outer columns: counter accounts at the display depth, small ones merged
                      (threshold (* (max money-in money-out) (/ (inexact->exact min-share) 100)))
@@ -318,18 +361,19 @@
                                                       (else (string<? (name a) (name b))))))))
                           (cons
                            (map (lambda (id)
-                                  (list id (name id) (money (hash-ref weight id)) (hash-ref weight id)
-                                        sankey-neutral-colour))
+                                  (shown id (name id) (money (hash-ref weight id)) (hash-ref weight id)
+                                         (if (eq? direction 'in) sankey-green sankey-red)
+                                         (not (other? id))))
                                 ordered)
                            (map (lambda (key)
                                   (let* ((id (car key))
                                          (selected (cdr key))
                                          (amount (hash-ref link-amounts key)))
                                     (if (eq? direction 'in)
-                                        (list id selected amount (colour selected)
+                                        (list id selected amount (ribbon-colour direction selected)
                                               (string-append (name id) " \u2192 " (label-of selected)
                                                              ": " (money amount)))
-                                        (list selected id amount (colour selected)
+                                        (list selected id amount (ribbon-colour direction selected)
                                               (string-append (label-of selected) " \u2192 " (name id)
                                                              ": " (money amount))))))
                                 (reverse link-keys))))))
@@ -337,10 +381,10 @@
                      (targets (outer 'out))
                      (middle-nodes
                       (map (lambda (guid)
-                             (list guid (label-of guid)
-                                   (string-append "+" (money (hash-ref selected-in guid 0))
-                                                  " / \u2212" (money (hash-ref selected-out guid 0)))
-                                   (size guid) (colour guid)))
+                             (shown guid (label-of guid)
+                                    (string-append "+" (money (hash-ref selected-in guid 0))
+                                                   " / \u2212" (money (hash-ref selected-out guid 0)))
+                                    (size guid) (colour guid) #t))
                            middle))
                      (columns-and-sides
                       (filter (lambda (c) (pair? (car c)))

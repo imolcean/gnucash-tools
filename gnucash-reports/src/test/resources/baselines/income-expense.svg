@@ -1,25 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="600" viewBox="0 0 1100 600" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="12" data-report="income-expense" data-revenue="2000.00" data-trading="0.00" data-expenses="740.00" data-net-income="1260.00">
 <rect width="1100" height="600" fill="#ffffff"/>
 <g fill-opacity="0.45" stroke="#ffffff" stroke-width="1">
-<path d="M307.3,46.4C383.5,46.4 383.5,46.4 459.8,46.4L459.8,578.4C383.5,578.4 383.5,578.4 307.3,578.4Z" fill="#898781"><title>Income → Revenue: €2,000.00</title></path>
-<path d="M140.8,46.4C217,46.4 217,46.4 293.3,46.4L293.3,578.4C217,578.4 217,578.4 140.8,578.4Z" fill="#eb6834"><title>Salary → Income: €2,000.00</title></path>
-<path d="M473.8,46.4C550,46.4 550,30 626.2,30L626.2,226.8C550,226.8 550,243.2 473.8,243.2Z" fill="#898781"><title>Revenue → Expenses: €740.00</title></path>
-<path d="M640.2,30C716.5,30 716.5,30 792.7,30L792.7,168.3C716.5,168.3 716.5,168.3 640.2,168.3Z" fill="#1baf7a"><title>Expenses → Rent: €520.00</title></path>
-<path d="M640.2,168.3C716.5,168.3 716.5,194.3 792.7,194.3L792.7,247.5C716.5,247.5 716.5,221.5 640.2,221.5Z" fill="#eda100"><title>Expenses → Misc: €200.00</title></path>
-<path d="M640.2,221.5C716.5,221.5 716.5,273.5 792.7,273.5L792.7,278.8C716.5,278.8 716.5,226.8 640.2,226.8Z" fill="#e87ba4"><title>Expenses → Food: €20.00</title></path>
-<path d="M806.7,273.5C883,273.5 883,273.5 959.2,273.5L959.2,278.8C883,278.8 883,278.8 806.7,278.8Z" fill="#e87ba4"><title>Food → Groceries: €20.00</title></path>
-<path d="M473.8,243.2C550,243.2 550,252.8 626.2,252.8L626.2,588C550,588 550,578.4 473.8,578.4Z" fill="#2a78d6"><title>Revenue → Net income: €1,260.00</title></path>
+<path d="M307.3,46.4C383.5,46.4 383.5,46.4 459.8,46.4L459.8,578.4C383.5,578.4 383.5,578.4 307.3,578.4Z" fill="#008300"><title>Income → Revenue: €2,000.00</title></path>
+<path d="M140.8,46.4C217,46.4 217,46.4 293.3,46.4L293.3,578.4C217,578.4 217,578.4 140.8,578.4Z" fill="#008300"><title>Salary → Income: €2,000.00</title></path>
+<path d="M473.8,46.4C550,46.4 550,30 626.2,30L626.2,226.8C550,226.8 550,243.2 473.8,243.2Z" fill="#e34948"><title>Revenue → Expenses: €740.00</title></path>
+<path d="M640.2,30C716.5,30 716.5,30 792.7,30L792.7,168.3C716.5,168.3 716.5,168.3 640.2,168.3Z" fill="#e34948"><title>Expenses → Rent: €520.00</title></path>
+<path d="M640.2,168.3C716.5,168.3 716.5,194.3 792.7,194.3L792.7,247.5C716.5,247.5 716.5,221.5 640.2,221.5Z" fill="#e34948"><title>Expenses → Misc: €200.00</title></path>
+<path d="M640.2,221.5C716.5,221.5 716.5,273.5 792.7,273.5L792.7,278.8C716.5,278.8 716.5,226.8 640.2,226.8Z" fill="#e34948"><title>Expenses → Food: €20.00</title></path>
+<path d="M806.7,273.5C883,273.5 883,273.5 959.2,273.5L959.2,278.8C883,278.8 883,278.8 806.7,278.8Z" fill="#e34948"><title>Food → Groceries: €20.00</title></path>
+<path d="M473.8,243.2C550,243.2 550,252.8 626.2,252.8L626.2,588C550,588 550,578.4 473.8,578.4Z" fill="#008300"><title>Revenue → Net income: €1,260.00</title></path>
 </g>
 <g>
-<rect x="126.8" y="46.4" width="14" height="532" fill="#eb6834"><title>Salary: €2,000.00</title></rect>
-<rect x="293.3" y="46.4" width="14" height="532" fill="#898781"><title>Income: €2,000.00</title></rect>
+<rect x="126.8" y="46.4" width="14" height="532" fill="#008300"><title>Salary: €2,000.00</title></rect>
+<rect x="293.3" y="46.4" width="14" height="532" fill="#008300"><title>Income: €2,000.00</title></rect>
 <rect x="459.8" y="46.4" width="14" height="532" fill="#898781"><title>Revenue: €2,000.00</title></rect>
-<rect x="626.2" y="30" width="14" height="196.8" fill="#898781"><title>Expenses: €740.00</title></rect>
-<rect x="626.2" y="252.8" width="14" height="335.2" fill="#2a78d6"><title>Net income: €1,260.00</title></rect>
-<rect x="792.7" y="30" width="14" height="138.3" fill="#1baf7a"><title>Rent: €520.00</title></rect>
-<rect x="792.7" y="194.3" width="14" height="53.2" fill="#eda100"><title>Misc: €200.00</title></rect>
-<rect x="792.7" y="273.5" width="14" height="5.3" fill="#e87ba4"><title>Food: €20.00</title></rect>
-<rect x="959.2" y="273.5" width="14" height="5.3" fill="#e87ba4"><title>Groceries: €20.00</title></rect>
+<rect x="626.2" y="30" width="14" height="196.8" fill="#e34948"><title>Expenses: €740.00</title></rect>
+<rect x="626.2" y="252.8" width="14" height="335.2" fill="#008300"><title>Net income: €1,260.00</title></rect>
+<rect x="792.7" y="30" width="14" height="138.3" fill="#e34948"><title>Rent: €520.00</title></rect>
+<rect x="792.7" y="194.3" width="14" height="53.2" fill="#e34948"><title>Misc: €200.00</title></rect>
+<rect x="792.7" y="273.5" width="14" height="5.3" fill="#e34948"><title>Food: €20.00</title></rect>
+<rect x="959.2" y="273.5" width="14" height="5.3" fill="#e34948"><title>Groceries: €20.00</title></rect>
 </g>
 <g>
 <text x="120.8" y="316.4" text-anchor="end" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Salary €2,000.00</text>

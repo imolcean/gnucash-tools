@@ -1,6 +1,8 @@
 package org.duckdns.gory26.gnucash.reports;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,6 +39,44 @@ record Report(String file, String html) {
     /** Whether some node's hover text starts with {@code label}, i.e. a node of that name is drawn. */
     boolean hasNode(String label) {
         return svg().contains("<title>" + escape(label) + ": ");
+    }
+
+    /** The fill colour of the node whose hover text starts with {@code label}, e.g. {@code #008300}. */
+    String nodeColour(String label) {
+        return colourBefore("<rect[^>]*", escape(label) + ": ");
+    }
+
+    /** The fill colour of the ribbon whose hover text is exactly {@code hoverText}. */
+    String ribbonColour(String hoverText) {
+        return colourBefore("<path[^>]*", escape(hoverText) + "</title>");
+    }
+
+    /** The labels written beside the nodes, as a reader sees them: name and amount, either, or none. */
+    List<String> labels() {
+        Matcher matcher = Pattern.compile("<text[^>]* fill=\"#0b0b0b\">(.*?)</text>").matcher(svg());
+        List<String> labels = new ArrayList<>();
+        while(matcher.find()) {
+            labels.add(matcher.group(1).replaceAll("<[^>]*>", ""));
+        }
+        return labels;
+    }
+
+    /** The diagram's title line: the report's name and its period. */
+    String title() {
+        Matcher matcher = Pattern.compile("<title>(.*?)</title>", Pattern.DOTALL).matcher(html);
+        if(!matcher.find()) {
+            throw new AssertionError("the report has no title");
+        }
+        return matcher.group(1).trim().replace("&amp;", "&");
+    }
+
+    private String colourBefore(String element, String title) {
+        Matcher matcher = Pattern.compile(element + " fill=\"(#[0-9a-f]{6})\"><title>" + Pattern.quote(title))
+                .matcher(svg());
+        if(!matcher.find()) {
+            throw new AssertionError("no element with hover text " + title);
+        }
+        return matcher.group(1);
     }
 
     /**

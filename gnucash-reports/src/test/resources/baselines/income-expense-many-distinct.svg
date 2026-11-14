@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="600" viewBox="0 0 1100 600" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="12" data-report="income-expense" data-revenue="2000.00" data-trading="0.00" data-expenses="805.00" data-net-income="1195.00">
+<rect width="1100" height="600" fill="#ffffff"/>
+<g fill-opacity="0.45" stroke="#ffffff" stroke-width="1">
+<path d="M307.3,45.6C383.5,45.6 383.5,45.6 459.8,45.6L459.8,577.5C383.5,577.5 383.5,577.5 307.3,577.5Z" fill="#008300"><title>Income → Revenue: €2,000.00</title></path>
+<path d="M140.8,45.6C217,45.6 217,45.6 293.3,45.6L293.3,577.5C217,577.5 217,577.5 140.8,577.5Z" fill="#2a78d6"><title>Salary → Income: €2,000.00</title></path>
+<path d="M473.8,45.6C550,45.6 550,30 626.2,30L626.2,244.1C550,244.1 550,259.7 473.8,259.7Z" fill="#e34948"><title>Revenue → Expenses: €805.00</title></path>
+<path d="M640.2,30C716.5,30 716.5,30 792.7,30L792.7,168.3C716.5,168.3 716.5,168.3 640.2,168.3Z" fill="#eb6834"><title>Expenses → Rent: €520.00</title></path>
+<path d="M640.2,168.3C716.5,168.3 716.5,194.3 792.7,194.3L792.7,247.5C716.5,247.5 716.5,221.5 640.2,221.5Z" fill="#1baf7a"><title>Expenses → Misc: €200.00</title></path>
+<path d="M640.2,221.5C716.5,221.5 716.5,273.5 792.7,273.5L792.7,278.8C716.5,278.8 716.5,226.8 640.2,226.8Z" fill="#eda100"><title>Expenses → Food: €20.00</title></path>
+<path d="M806.7,273.5C883,273.5 883,273.5 959.2,273.5L959.2,278.8C883,278.8 883,278.8 806.7,278.8Z" fill="#eda100"><title>Food → Groceries: €20.00</title></path>
+<path d="M640.2,226.8C716.5,226.8 716.5,304.8 792.7,304.8L792.7,308.8C716.5,308.8 716.5,230.8 640.2,230.8Z" fill="#e87ba4"><title>Expenses → Phone: €15.00</title></path>
+<path d="M640.2,230.8C716.5,230.8 716.5,334.8 792.7,334.8L792.7,338.5C716.5,338.5 716.5,234.5 640.2,234.5Z" fill="#6250d6"><title>Expenses → Travel: €14.00</title></path>
+<path d="M640.2,234.5C716.5,234.5 716.5,364.5 792.7,364.5L792.7,368C716.5,368 716.5,238 640.2,238Z" fill="#2a78d6"><title>Expenses → Gym: €13.00</title></path>
+<path d="M640.2,238C716.5,238 716.5,394 792.7,394L792.7,397.2C716.5,397.2 716.5,241.2 640.2,241.2Z" fill="#eb6834"><title>Expenses → Garden: €12.00</title></path>
+<path d="M640.2,241.2C716.5,241.2 716.5,423.2 792.7,423.2L792.7,426.2C716.5,426.2 716.5,244.2 640.2,244.2Z" fill="#1baf7a"><title>Expenses → Pets: €11.00</title></path>
+<path d="M473.8,259.7C550,259.7 550,270.2 626.2,270.2L626.2,588C550,588 550,577.5 473.8,577.5Z" fill="#008300"><title>Revenue → Net income: €1,195.00</title></path>
+</g>
+<g>
+<rect x="126.8" y="45.6" width="14" height="531.9" fill="#2a78d6"><title>Salary: €2,000.00</title></rect>
+<rect x="293.3" y="45.6" width="14" height="531.9" fill="#008300"><title>Income: €2,000.00</title></rect>
+<rect x="459.8" y="45.6" width="14" height="531.9" fill="#898781"><title>Revenue: €2,000.00</title></rect>
+<rect x="626.2" y="30" width="14" height="214.2" fill="#e34948"><title>Expenses: €805.00</title></rect>
+<rect x="626.2" y="270.2" width="14" height="317.8" fill="#008300"><title>Net income: €1,195.00</title></rect>
+<rect x="792.7" y="30" width="14" height="138.3" fill="#eb6834"><title>Rent: €520.00</title></rect>
+<rect x="792.7" y="194.3" width="14" height="53.2" fill="#1baf7a"><title>Misc: €200.00</title></rect>
+<rect x="792.7" y="273.5" width="14" height="5.3" fill="#eda100"><title>Food: €20.00</title></rect>
+<rect x="792.7" y="304.8" width="14" height="4" fill="#e87ba4"><title>Phone: €15.00</title></rect>
+<rect x="792.7" y="334.8" width="14" height="3.7" fill="#6250d6"><title>Travel: €14.00</title></rect>
+<rect x="792.7" y="364.5" width="14" height="3.5" fill="#2a78d6"><title>Gym: €13.00</title></rect>
+<rect x="792.7" y="394" width="14" height="3.2" fill="#eb6834"><title>Garden: €12.00</title></rect>
+<rect x="792.7" y="423.2" width="14" height="3" fill="#1baf7a"><title>Pets: €11.00</title></rect>
+<rect x="959.2" y="273.5" width="14" height="5.3" fill="#eda100"><title>Groceries: €20.00</title></rect>
+</g>
+<g>
+<text x="120.8" y="315.5" text-anchor="end" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Salary €2,000.00</text>
+<text x="120.8" y="315.5" text-anchor="end" fill="#0b0b0b">Salary <tspan fill="#52514e">€2,000.00</tspan></text>
+<text x="300.3" y="39.6" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Income €2,000.00</text>
+<text x="300.3" y="39.6" text-anchor="middle" fill="#0b0b0b">Income <tspan fill="#52514e">€2,000.00</tspan></text>
+<text x="466.8" y="39.6" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Revenue €2,000.00</text>
+<text x="466.8" y="39.6" text-anchor="middle" fill="#0b0b0b">Revenue <tspan fill="#52514e">€2,000.00</tspan></text>
+<text x="633.2" y="24" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Expenses €805.00</text>
+<text x="633.2" y="24" text-anchor="middle" fill="#0b0b0b">Expenses <tspan fill="#52514e">€805.00</tspan></text>
+<text x="646.2" y="433.1" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Net income €1,195.00</text>
+<text x="646.2" y="433.1" text-anchor="start" fill="#0b0b0b">Net income <tspan fill="#52514e">€1,195.00</tspan></text>
+<text x="812.7" y="103.2" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Rent €520.00</text>
+<text x="812.7" y="103.2" text-anchor="start" fill="#0b0b0b">Rent <tspan fill="#52514e">€520.00</tspan></text>
+<text x="812.7" y="224.9" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Misc €200.00</text>
+<text x="812.7" y="224.9" text-anchor="start" fill="#0b0b0b">Misc <tspan fill="#52514e">€200.00</tspan></text>
+<text x="799.7" y="267.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Food €20.00</text>
+<text x="799.7" y="267.5" text-anchor="middle" fill="#0b0b0b">Food <tspan fill="#52514e">€20.00</tspan></text>
+<text x="812.7" y="310.8" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Phone €15.00</text>
+<text x="812.7" y="310.8" text-anchor="start" fill="#0b0b0b">Phone <tspan fill="#52514e">€15.00</tspan></text>
+<text x="812.7" y="340.7" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Travel €14.00</text>
+<text x="812.7" y="340.7" text-anchor="start" fill="#0b0b0b">Travel <tspan fill="#52514e">€14.00</tspan></text>
+<text x="812.7" y="370.3" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Gym €13.00</text>
+<text x="812.7" y="370.3" text-anchor="start" fill="#0b0b0b">Gym <tspan fill="#52514e">€13.00</tspan></text>
+<text x="812.7" y="399.6" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Garden €12.00</text>
+<text x="812.7" y="399.6" text-anchor="start" fill="#0b0b0b">Garden <tspan fill="#52514e">€12.00</tspan></text>
+<text x="812.7" y="428.7" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Pets €11.00</text>
+<text x="812.7" y="428.7" text-anchor="start" fill="#0b0b0b">Pets <tspan fill="#52514e">€11.00</tspan></text>
+<text x="979.2" y="280.2" text-anchor="start" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Groceries €20.00</text>
+<text x="979.2" y="280.2" text-anchor="start" fill="#0b0b0b">Groceries <tspan fill="#52514e">€20.00</tspan></text>
+</g>
+</svg>

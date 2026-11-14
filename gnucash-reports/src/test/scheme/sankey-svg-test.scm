@@ -368,6 +368,35 @@
   (test-eqv 8 (length sankey-palette))
   (test-equal "#2a78d6" (car sankey-palette)))
 
+(test-group "the sub-palette is the palette without its green and red, in order"
+  (test-assert "green and red are palette slots"
+    (and (member sankey-green sankey-palette) (member sankey-red sankey-palette) #t))
+  (test-equal (filter (lambda (c) (not (member c (list sankey-green sankey-red)))) sankey-palette)
+    sankey-sub-palette)
+  (test-eqv 6 (length sankey-sub-palette)))
+
+;; the simple diagram with some labels emptied: salary shows its amount only, gifts nothing, food its name only
+(define bare-columns
+  '((("salary" "" "30.00" 30 "#2a78d6" "Salary: 30.00") ("gifts" "" "" 10 "#eb6834" "Gifts: 10.00"))
+    (("hub" "Revenue" "40.00" 40 "#898781"))
+    (("rent" "Rent" "25.00" 25 "#1baf7a") ("food" "Food" "" 15 "#eda100" "Food: 15.00"))))
+
+(test-group "labels can show the name alone, the amount alone, or nothing"
+  (let* ((svg (sankey-svg bare-columns links))
+         (layout (sankey-layout bare-columns links))
+         (full (sankey-layout columns links)))
+    (test-assert "amount alone, without a leading space" (contains? svg "><tspan fill=\"#52514e\">30.00</tspan></text>"))
+    (test-assert "name alone, without a trailing space" (contains? svg ">Food</text>"))
+    (test-assert "nothing to show: no label" (not (list-ref (placed-node layout "gifts") 6)))
+    (test-eqv "nothing to show: no text drawn (two <text> for each of salary, hub, rent and food)" 8
+      (count (lambda (line) (string-prefix? "<text" line)) (string-split svg #\newline)))
+    (test-assert "the hover text keeps name and amount" (contains? svg "<title>Gifts: 10.00</title>"))
+    (test-assert "so does the one of a node showing its amount alone" (contains? svg "<title>Salary: 30.00</title>"))
+    (test-assert "a link's default hover names the node even without a label"
+      (contains? svg "<title>Gifts: 10.00 → Revenue</title>"))
+    (test-assert "the left label margin shrinks to the amounts"
+      (< (node-x layout "salary") (node-x full "salary")))))
+
 (define failures (test-runner-fail-count (test-runner-current)))
 (test-end "sankey-svg")
 (exit (if (zero? failures) 0 1))

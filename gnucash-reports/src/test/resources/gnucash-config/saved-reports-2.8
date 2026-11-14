@@ -87,6 +87,37 @@
                            ("Display" "Minimum share (%)" 0)
                            ("Accounts" "Levels of Subaccounts" 2))))
 
+  (save "Income Expense Sankey November distinct" "f1c0de000000000000000000000000c5"
+        income-expense-sankey "Income & Expense Sankey"
+        (append november '(("Commodities" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 0)
+                           ("Display" "Sub-account colours" distinct))))
+
+  (save "Income Expense Sankey November gray" "f1c0de000000000000000000000000c6"
+        income-expense-sankey "Income & Expense Sankey"
+        (append november '(("Commodities" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 0)
+                           ("Display" "Sub-account colours" gray))))
+
+  (save "Income Expense Sankey November full names" "f1c0de000000000000000000000000c7"
+        income-expense-sankey "Income & Expense Sankey"
+        (append november '(("Commodities" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 0)
+                           ("Display" "Show Full Account Names" #t))))
+
+  (save "Income Expense Sankey November without names" "f1c0de000000000000000000000000c8"
+        income-expense-sankey "Income & Expense Sankey"
+        (append november '(("Commodities" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 0)
+                           ("Display" "Show account names" #f))))
+
+  (save "Income Expense Sankey November without labels" "f1c0de000000000000000000000000c9"
+        income-expense-sankey "Income & Expense Sankey"
+        (append november '(("Commodities" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 0)
+                           ("Display" "Show account names" #f)
+                           ("Display" "Show balances" #f))))
+
   (save "Cash Flow Sankey November" "f1c0de000000000000000000000000d1"
         cash-flow-sankey "Cash Flow Sankey"
         (append november '(("General" "Report's currency" "EUR")
@@ -102,4 +133,17 @@
   (save "Cash Flow Sankey November merged" "f1c0de000000000000000000000000d3"
         cash-flow-sankey "Cash Flow Sankey"
         (append november '(("General" "Report's currency" "EUR")
-                           ("Display" "Minimum share (%)" 5)))))
+                           ("Display" "Minimum share (%)" 5))))
+
+  (save "Cash Flow Sankey November distinct" "f1c0de000000000000000000000000d4"
+        cash-flow-sankey "Cash Flow Sankey"
+        (append november '(("General" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 0)
+                           ("Display" "Sub-account colours" distinct))))
+
+  (save "Cash Flow Sankey November short names without balances" "f1c0de000000000000000000000000d5"
+        cash-flow-sankey "Cash Flow Sankey"
+        (append november '(("General" "Report's currency" "EUR")
+                           ("Display" "Minimum share (%)" 0)
+                           ("Display" "Show Full Account Names" #f)
+                           ("Display" "Show balances" #f)))))

@@ -118,8 +118,9 @@
     </build>
 
     <profiles>
-        <!-- ./mvnw -pl gnucash-reports package -Pinstall-desktop
-             Copies fincore-reports/ into GnuCash's user data folder. It never touches config-user.scm: the line
+        <!-- ./mvnw -pl gnucash-reports -am install -Pinstall-desktop
+             Copies fincore-reports/ into GnuCash's user data folder, in the install phase: it makes the build
+             usable on this machine, which is what install is for. It never touches config-user.scm: the line
              that loads the reports is added by hand, once (README.md). -->
         <profile>
             <id>install-desktop</id>
@@ -131,7 +132,7 @@
                         <executions>
                             <execution>
                                 <id>install-desktop</id>
-                                <phase>package</phase>
+                                <phase>install</phase>
                                 <goals>
                                     <goal>copy-resources</goal>
                                 </goals>

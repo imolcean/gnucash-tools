@@ -5,10 +5,12 @@
 ;;
 ;; Input
 ;;   columns  list of columns, left to right; a column is a list of nodes, top to bottom
-;;   node     (id label amount-text value colour)
+;;   node     (id label amount-text value colour [hover])
 ;;              id           any value comparable with equal?
-;;              label        name shown beside the node
-;;              amount-text  formatted amount shown after the name
+;;              label        name shown beside the node; "" shows the amount alone
+;;              amount-text  formatted amount shown after the name; "" shows the name alone. A node whose
+;;                           label and amount-text are both "" has no label at all
+;;              hover        the node's hover text, by default "label: amount-text"
 ;;              value        exact or inexact non-negative number; the node is as tall as the largest of
 ;;                           value, the sum of its incoming links and the sum of its outgoing links
 ;;              colour       "#rrggbb"
@@ -26,6 +28,9 @@
             sankey-split-small
             sankey-decimal-string
             sankey-palette
+            sankey-sub-palette
+            sankey-green
+            sankey-red
             sankey-neutral-colour))
 
 ;; Categorical slots in their validated order (blue, orange, aqua, yellow, magenta, green, violet, red).
@@ -33,6 +38,12 @@
 ;; order and never cycled: whoever needs a ninth colour gets sankey-neutral-colour.
 (define sankey-palette
   '("#2a78d6" "#eb6834" "#1baf7a" "#eda100" "#e87ba4" "#008300" "#6250d6" "#e34948"))
+;; Money in and income are green, money out and expenses red: the palette's own green and red slots.
+(define sankey-green "#008300")
+(define sankey-red "#e34948")
+;; The slots left for anything else, so that nothing else looks like income or expense; same order.
+(define sankey-sub-palette
+  (remove (lambda (c) (member c (list sankey-green sankey-red))) sankey-palette))
 (define sankey-neutral-colour "#898781")
 
 (define surface "#ffffff")
@@ -64,6 +75,12 @@
 (define (node-amount n) (list-ref n 2))
 (define (node-value n) (list-ref n 3))
 (define (node-colour n) (list-ref n 4))
+(define (node-hover n)
+  (if (> (length n) 5)
+      (list-ref n 5)
+      (string-append (node-label n) ": " (node-amount n))))
+(define (labelled? n)
+  (not (and (string-null? (node-label n)) (string-null? (node-amount n)))))
 
 (define (link-from l) (list-ref l 0))
 (define (link-to l) (list-ref l 1))
@@ -119,9 +136,15 @@
 
 (define (text-width text) (* char-width (string-length text)))
 
+;; The width of "name amount", or of whichever of the two is not empty.
+(define (shown-width name amount)
+  (+ (text-width name)
+     (if (or (string-null? name) (string-null? amount)) 0 char-width)
+     (text-width amount)))
+
 ;; The name, cut with an ellipsis so that "name amount" fits into max-width.
 (define (fit-name name amount max-width)
-  (let* ((room (- max-width (text-width amount) char-width))
+  (let* ((room (- max-width (shown-width "" amount) (if (string-null? amount) 0 char-width)))
          ;; a hundredth of a pixel of slack, so that rounding in an inexact max-width does not cost a letter
          (chars (inexact->exact (floor (/ (+ (max room 0) 1/100) char-width)))))
     (cond ((<= (string-length name) chars) name)
@@ -129,7 +152,7 @@
           (else (string-append (substring name 0 (- chars 1)) "\u2026")))))
 
 (define (label-width n)
-  (+ (text-width (node-label n)) char-width (text-width (node-amount n))))
+  (shown-width (node-label n) (node-amount n)))
 
 ;;;; geometry
 
@@ -317,7 +340,8 @@
 ;;                  nodes than fit
 ;;   scale          pixels per unit of value, the same for every node and link above the minimum thickness
 ;;   nodes          list of (id x y h side node label), side being the column's label side and label
-;;                  (tx ty anchor shown-name), anchor one of start, middle, end
+;;                  (tx ty anchor shown-name), anchor one of start, middle, end; label is #f for a node
+;;                  with neither name nor amount to show
 ;;   links          list of (link x0 y0 x1 y1 w), y being the top edge of the ribbon at each end
 (define* (sankey-layout columns links #:key (width 1100) (height 600) (label-sides #f) (pinned-last '()))
   (let* ((columns (order-columns columns links pinned-last))
@@ -527,7 +551,7 @@
                           (least (car least))
                           (else fallback)))
                  (name (fit-name (node-label n) (node-amount n) (max (fourth c) (* 12 char-width))))
-                 (w (+ (text-width name) char-width (text-width (node-amount n)))))
+                 (w (shown-width name (node-amount n))))
             (set! taken (cons (text-box (first c) (second c) (third c) w) taken))
             (hash-set! labels id (list (first c) (second c) (third c) name))))
 
@@ -579,10 +603,11 @@
                                (if (> ncols 1) (- pitch (* 2 label-gap)) (- width (* 2 margin))))
                          #t))))))
 
-        ;; outer labels first, since they have room of their own; then the inner ones, left to right
-        (for-each (lambda (col i) (when (outer? i) (for-each (lambda (n) (label! n i)) col)))
+        ;; outer labels first, since they have room of their own; then the inner ones, left to right. A node
+        ;; with nothing to show has no label and takes no room.
+        (for-each (lambda (col i) (when (outer? i) (for-each (lambda (n) (label! n i)) (filter labelled? col))))
                   columns (iota ncols))
-        (for-each (lambda (col i) (unless (outer? i) (for-each (lambda (n) (label! n i)) col)))
+        (for-each (lambda (col i) (unless (outer? i) (for-each (lambda (n) (label! n i)) (filter labelled? col))))
                   columns (iota ncols))
 
         (list (cons 'width width)
@@ -634,24 +659,31 @@
      (attr "width" (fmt node-width))
      (attr "height" (fmt (max (list-ref placed 3) 1)))
      (attr "fill" (node-colour n))
-     "><title>" (sankey-xml-escape (string-append (node-label n) ": " (node-amount n))) "</title></rect>\n")))
+     "><title>" (sankey-xml-escape (node-hover n)) "</title></rect>\n")))
 
 ;; The label twice: first as a surface-coloured outline, then as ink. The outline keeps text readable where
-;; it comes close to a ribbon; the old WebKit has no paint-order, hence two elements.
+;; it comes close to a ribbon; the old WebKit has no paint-order, hence two elements. Nothing for a node
+;; without a label.
 (define (draw-label placed)
-  (let* ((n (list-ref placed 5))
-         (label (list-ref placed 6))
-         (position (string-append (attr "x" (fmt (first label)))
-                                  (attr "y" (fmt (second label)))
-                                  (attr "text-anchor" (symbol->string (third label)))))
-         (name-text (sankey-xml-escape (fourth label)))
-         (amount-text (sankey-xml-escape (node-amount n))))
-    (string-append
-     "<text" position (attr "fill" surface) (attr "stroke" surface)
-     (attr "stroke-width" "3") (attr "stroke-linejoin" "round") ">"
-     name-text " " amount-text "</text>\n"
-     "<text" position (attr "fill" ink-primary) ">"
-     name-text " <tspan" (attr "fill" ink-secondary) ">" amount-text "</tspan></text>\n")))
+  (let ((n (list-ref placed 5))
+        (label (list-ref placed 6)))
+    (if (not label)
+        ""
+        (let* ((position (string-append (attr "x" (fmt (first label)))
+                                        (attr "y" (fmt (second label)))
+                                        (attr "text-anchor" (symbol->string (third label)))))
+               (name-text (sankey-xml-escape (fourth label)))
+               (amount-text (sankey-xml-escape (node-amount n)))
+               (gap (if (or (string-null? name-text) (string-null? amount-text)) "" " "))
+               (amount-ink (if (string-null? amount-text)
+                               ""
+                               (string-append "<tspan" (attr "fill" ink-secondary) ">" amount-text "</tspan>"))))
+          (string-append
+           "<text" position (attr "fill" surface) (attr "stroke" surface)
+           (attr "stroke-width" "3") (attr "stroke-linejoin" "round") ">"
+           name-text gap amount-text "</text>\n"
+           "<text" position (attr "fill" ink-primary) ">"
+           name-text gap amount-ink "</text>\n")))))
 
 ;; The whole diagram as one <svg> element. data is an association list of (name . text) written as
 ;; data-<name> attributes, for whoever reads the report by program.
@@ -663,7 +695,9 @@
                   (for-each (lambda (p) (hash-set! table (car p) (list-ref p 5))) nodes)
                   table))
          (colour-of (lambda (id) (node-colour (hash-ref by-id id))))
-         (label-of (lambda (id) (node-label (hash-ref by-id id))))
+         (label-of (lambda (id)
+                     (let ((n (hash-ref by-id id)))
+                       (if (string-null? (node-label n)) (node-hover n) (node-label n)))))
          (w (fmt (assq-ref layout 'width)))
          (h (fmt (assq-ref layout 'height))))
     (string-append

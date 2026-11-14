@@ -140,6 +140,49 @@ class CashFlowSankeyTest {
     }
 
     @Test
+    void moneyInIsGreenMoneyOutRedAndTheSelectedAccountsNeutralByDefault() {
+        Report sankey = GnuCash.report(SANKEY, RICH);
+
+        assertThat(sankey.nodeColour(SALARY)).isEqualTo(IncomeExpenseSankeyTest.GREEN);
+        assertThat(sankey.nodeColour("Expenses" + DOT + "Rent")).isEqualTo(IncomeExpenseSankeyTest.RED);
+        assertThat(sankey.nodeColour(CASH)).isEqualTo(IncomeExpenseSankeyTest.NEUTRAL);
+        assertThat(sankey.nodeColour(CHECKING)).isEqualTo(IncomeExpenseSankeyTest.NEUTRAL);
+        assertThat(sankey.ribbonColour(SALARY + " → " + CASH + ": €2,600.00")).isEqualTo(IncomeExpenseSankeyTest.GREEN);
+        assertThat(sankey.ribbonColour(CASH + " → " + FOOD + ": €40.00")).isEqualTo(IncomeExpenseSankeyTest.RED);
+    }
+
+    @Test
+    void distinctColoursGoToTheSelectedAccountsAndTheirRibbons() {
+        Report sankey = GnuCash.report(SANKEY + " distinct", RICH);
+
+        // largest first: Cash, then Checking; the sub-palette has no green or red
+        assertThat(sankey.nodeColour(CASH)).isEqualTo("#2a78d6");
+        assertThat(sankey.nodeColour(CHECKING)).isEqualTo("#eb6834");
+        assertThat(sankey.nodeColour(SALARY)).isEqualTo(IncomeExpenseSankeyTest.GREEN);
+        assertThat(sankey.ribbonColour(SALARY + " → " + CHECKING + ": €400.00")).isEqualTo("#eb6834");
+        assertThat(sankey.ribbonColour(CASH + " → " + FOOD + ": €40.00")).isEqualTo("#2a78d6");
+    }
+
+    @Test
+    void shortNamesWithoutBalances() {
+        Report sankey = GnuCash.report(SANKEY + " short names without balances", RICH);
+
+        assertThat(sankey.labels()).contains("Cash", "Checking", "Salary", "Rent")
+                .noneMatch(label -> label.contains("€"));
+        // the hover text keeps the amounts, under the names shown
+        assertThat(sankey.hasHoverText("Checking: +€412.50 / −€56.00")).isTrue();
+        assertThat(sankey.hasHoverText("Salary → Cash: €2,600.00")).isTrue();
+    }
+
+    @Test
+    void byDefaultTheReportCoversOneDay() {
+        Report sankey = GnuCash.report("Cash Flow Sankey", SAMPLE);
+
+        // GnuCash writes a period of one day as that day alone, e.g. "11/14/2026"; a longer one as "a to b"
+        assertThat(sankey.title()).matches("Cash Flow Sankey - \\d\\d/\\d\\d/\\d{4}");
+    }
+
+    @Test
     void counterAccountsBelowTheMinimumShareMergeIntoOther() {
         // trading flows hidden; 5 % of the 3,127.50 that came in is 156.38
         Report sankey = GnuCash.report(SANKEY + " merged", RICH);

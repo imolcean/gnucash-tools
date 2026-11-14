@@ -1,28 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="600" viewBox="0 0 1100 600" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="12" data-report="cash-flow" data-money-in="3127.50" data-money-out="816.00" data-difference="2311.50">
 <rect width="1100" height="600" fill="#ffffff"/>
 <g fill-opacity="0.45" stroke="#ffffff" stroke-width="1">
-<path d="M242.8,12C406.5,12 406.5,30 570.2,30L570.2,46.8C406.5,46.8 406.5,28.8 242.8,28.8Z" fill="#2a78d6"><title>Equity.Opening Balances → Assets.Cash: €100.00</title></path>
-<path d="M242.8,60.8C406.5,60.8 406.5,49.8 570.2,49.8L570.2,485.9C406.5,485.9 406.5,496.9 242.8,496.9Z" fill="#2a78d6"><title>Income.Salary → Assets.Cash: €2,600.00</title></path>
-<path d="M242.8,496.9C406.5,496.9 406.5,511.9 570.2,511.9L570.2,579C406.5,579 406.5,564 242.8,564Z" fill="#eb6834"><title>Income.Salary → Assets.Checking: €400.00</title></path>
-<path d="M242.8,43.3C406.5,43.3 406.5,46.8 570.2,46.8L570.2,49.8C406.5,49.8 406.5,46.3 242.8,46.3Z" fill="#2a78d6"><title>Expenses.Food → Assets.Cash: €15.00</title></path>
-<path d="M242.8,578.5C406.5,578.5 406.5,579 570.2,579L570.2,582C406.5,582 406.5,581.5 242.8,581.5Z" fill="#eb6834"><title>Income.Interest → Assets.Checking: €12.50</title></path>
-<path d="M584.2,150.8C747.9,150.8 747.9,334 911.6,334L911.6,340.7C747.9,340.7 747.9,157.5 584.2,157.5Z" fill="#2a78d6"><title>Assets.Cash → Expenses.Food: €40.00</title></path>
-<path d="M584.2,30C747.9,30 747.9,33.7 911.6,33.7L911.6,121C747.9,121 747.9,117.2 584.2,117.2Z" fill="#2a78d6"><title>Assets.Cash → Expenses.Rent: €520.00</title></path>
-<path d="M584.2,117.2C747.9,117.2 747.9,129 911.6,129L911.6,162.5C747.9,162.5 747.9,150.8 584.2,150.8Z" fill="#2a78d6"><title>Assets.Cash → Expenses.Misc: €200.00</title></path>
-<path d="M584.2,518.6C747.9,518.6 747.9,524.6 911.6,524.6L911.6,527.6C747.9,527.6 747.9,521.6 584.2,521.6Z" fill="#eb6834"><title>Assets.Checking → Expenses.Leisure: €16.00</title></path>
-<path d="M584.2,511.9C747.9,511.9 747.9,340.7 911.6,340.7L911.6,347.4C747.9,347.4 747.9,518.6 584.2,518.6Z" fill="#eb6834"><title>Assets.Checking → Expenses.Food: €40.00</title></path>
+<path d="M242.8,12C406.5,12 406.5,30 570.2,30L570.2,46.8C406.5,46.8 406.5,28.8 242.8,28.8Z" fill="#008300"><title>Equity.Opening Balances → Assets.Cash: €100.00</title></path>
+<path d="M242.8,60.8C406.5,60.8 406.5,49.8 570.2,49.8L570.2,485.9C406.5,485.9 406.5,496.9 242.8,496.9Z" fill="#008300"><title>Income.Salary → Assets.Cash: €2,600.00</title></path>
+<path d="M242.8,496.9C406.5,496.9 406.5,511.9 570.2,511.9L570.2,579C406.5,579 406.5,564 242.8,564Z" fill="#008300"><title>Income.Salary → Assets.Checking: €400.00</title></path>
+<path d="M242.8,43.3C406.5,43.3 406.5,46.8 570.2,46.8L570.2,49.8C406.5,49.8 406.5,46.3 242.8,46.3Z" fill="#008300"><title>Expenses.Food → Assets.Cash: €15.00</title></path>
+<path d="M242.8,578.5C406.5,578.5 406.5,579 570.2,579L570.2,582C406.5,582 406.5,581.5 242.8,581.5Z" fill="#008300"><title>Income.Interest → Assets.Checking: €12.50</title></path>
+<path d="M584.2,150.8C747.9,150.8 747.9,334 911.6,334L911.6,340.7C747.9,340.7 747.9,157.5 584.2,157.5Z" fill="#e34948"><title>Assets.Cash → Expenses.Food: €40.00</title></path>
+<path d="M584.2,30C747.9,30 747.9,33.7 911.6,33.7L911.6,121C747.9,121 747.9,117.2 584.2,117.2Z" fill="#e34948"><title>Assets.Cash → Expenses.Rent: €520.00</title></path>
+<path d="M584.2,117.2C747.9,117.2 747.9,129 911.6,129L911.6,162.5C747.9,162.5 747.9,150.8 584.2,150.8Z" fill="#e34948"><title>Assets.Cash → Expenses.Misc: €200.00</title></path>
+<path d="M584.2,518.6C747.9,518.6 747.9,524.6 911.6,524.6L911.6,527.6C747.9,527.6 747.9,521.6 584.2,521.6Z" fill="#e34948"><title>Assets.Checking → Expenses.Leisure: €16.00</title></path>
+<path d="M584.2,511.9C747.9,511.9 747.9,340.7 911.6,340.7L911.6,347.4C747.9,347.4 747.9,518.6 584.2,518.6Z" fill="#e34948"><title>Assets.Checking → Expenses.Food: €40.00</title></path>
 </g>
 <g>
-<rect x="228.8" y="12" width="14" height="16.8" fill="#898781"><title>Equity.Opening Balances: €100.00</title></rect>
-<rect x="228.8" y="43.3" width="14" height="3" fill="#898781"><title>Expenses.Food: €15.00</title></rect>
-<rect x="228.8" y="60.8" width="14" height="503.2" fill="#898781"><title>Income.Salary: €3,000.00</title></rect>
-<rect x="228.8" y="578.5" width="14" height="3" fill="#898781"><title>Income.Interest: €12.50</title></rect>
-<rect x="570.2" y="30" width="14" height="455.9" fill="#2a78d6"><title>Assets.Cash: +€2,715.00 / −€760.00</title></rect>
-<rect x="570.2" y="511.9" width="14" height="70.1" fill="#eb6834"><title>Assets.Checking: +€412.50 / −€56.00</title></rect>
-<rect x="911.6" y="33.7" width="14" height="87.2" fill="#898781"><title>Expenses.Rent: €520.00</title></rect>
-<rect x="911.6" y="129" width="14" height="33.5" fill="#898781"><title>Expenses.Misc: €200.00</title></rect>
-<rect x="911.6" y="334" width="14" height="13.4" fill="#898781"><title>Expenses.Food: €80.00</title></rect>
-<rect x="911.6" y="524.6" width="14" height="3" fill="#898781"><title>Expenses.Leisure: €16.00</title></rect>
+<rect x="228.8" y="12" width="14" height="16.8" fill="#008300"><title>Equity.Opening Balances: €100.00</title></rect>
+<rect x="228.8" y="43.3" width="14" height="3" fill="#008300"><title>Expenses.Food: €15.00</title></rect>
+<rect x="228.8" y="60.8" width="14" height="503.2" fill="#008300"><title>Income.Salary: €3,000.00</title></rect>
+<rect x="228.8" y="578.5" width="14" height="3" fill="#008300"><title>Income.Interest: €12.50</title></rect>
+<rect x="570.2" y="30" width="14" height="455.9" fill="#898781"><title>Assets.Cash: +€2,715.00 / −€760.00</title></rect>
+<rect x="570.2" y="511.9" width="14" height="70.1" fill="#898781"><title>Assets.Checking: +€412.50 / −€56.00</title></rect>
+<rect x="911.6" y="33.7" width="14" height="87.2" fill="#e34948"><title>Expenses.Rent: €520.00</title></rect>
+<rect x="911.6" y="129" width="14" height="33.5" fill="#e34948"><title>Expenses.Misc: €200.00</title></rect>
+<rect x="911.6" y="334" width="14" height="13.4" fill="#e34948"><title>Expenses.Food: €80.00</title></rect>
+<rect x="911.6" y="524.6" width="14" height="3" fill="#e34948"><title>Expenses.Leisure: €16.00</title></rect>
 </g>
 <g>
 <text x="222.8" y="24.4" text-anchor="end" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round">Equity.Opening Balances €100.00</text>

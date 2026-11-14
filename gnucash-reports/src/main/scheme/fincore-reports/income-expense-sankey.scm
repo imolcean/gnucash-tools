@@ -31,11 +31,21 @@
 (define optname-min-share (N_ "Minimum share (%)"))
 (define optname-width (N_ "Width"))
 (define optname-height (N_ "Height"))
+(define optname-show-names (N_ "Show account names"))
+(define optname-show-full-names (N_ "Show Full Account Names"))
+(define optname-show-balances (N_ "Show balances"))
+(define optname-sub-colours (N_ "Sub-account colours"))
 
 (define (options-generator)
   (let ((options (gnc-new-optiondb)))
     (gnc:options-add-date-interval!
      options gnc:pagename-general optname-start-date optname-end-date "c")
+    ;; One day by default: the report computes as soon as it is opened, and a long period on a large book
+    ;; takes long (docs/adr/0012).
+    (GncOption-set-default-value
+     (gnc-lookup-option options gnc:pagename-general optname-start-date) '(relative . today))
+    (GncOption-set-default-value
+     (gnc-lookup-option options gnc:pagename-general optname-end-date) '(relative . today))
 
     (gnc-register-account-list-option
      options gnc:pagename-accounts optname-accounts "a"
@@ -71,6 +81,21 @@
     (gnc-register-number-range-option
      options gnc:pagename-display optname-height "c"
      (N_ "Height of the diagram in pixels. It grows when the accounts do not fit.") 600 200 4000 50)
+    (gnc-register-simple-boolean-option
+     options gnc:pagename-display optname-show-names "d"
+     (N_ "Show the names of the accounts beside their nodes. Hover over a node for its name either way.") #t)
+    (gnc-register-simple-boolean-option
+     options gnc:pagename-display optname-show-full-names "e"
+     (N_ "Show full account names (including parent accounts).") #f)
+    (gnc-register-simple-boolean-option
+     options gnc:pagename-display optname-show-balances "f"
+     (N_ "Show the amount beside each node. Hover over a node for its amount either way.") #t)
+    (gnc-register-multichoice-option
+     options gnc:pagename-display optname-sub-colours "g"
+     (N_ "Income is green, expenses red; this colours the accounts below them.") "same-as-parent"
+     (list (vector 'same-as-parent (N_ "Same as parent"))
+           (vector 'gray (N_ "Gray"))
+           (vector 'distinct (N_ "Distinct colours"))))
 
     (gnc:options-set-default-section options gnc:pagename-accounts)
     options))
@@ -138,6 +163,10 @@
          (min-share (opt gnc:pagename-display optname-min-share))
          (width (opt gnc:pagename-display optname-width))
          (height (opt gnc:pagename-display optname-height))
+         (show-names? (opt gnc:pagename-display optname-show-names))
+         (show-full-names? (opt gnc:pagename-display optname-show-full-names))
+         (show-balances? (opt gnc:pagename-display optname-show-balances))
+         (sub-colours (opt gnc:pagename-display optname-sub-colours))
 
          (split-up-accounts (gnc:decompose-accountlist accounts))
          (revenue-accounts (assoc-ref split-up-accounts ACCT-TYPE-INCOME))
@@ -206,7 +235,9 @@
             (when (< own 0)
               (set! against (cons (cons (gnc-account-get-full-name account) (- own)) against)))
             (and (> value 0)
-                 (vector guid (xaccAccountGetName account) value (largest-first kids)))))
+                 (vector guid
+                         (if show-full-names? (gnc-account-get-full-name account) (xaccAccountGetName account))
+                         value (largest-first kids)))))
         (for-each
          (lambda (account)
            (let ((guid (register (display-account account))))
@@ -290,53 +321,59 @@
                                (income (merge-small income-trees 'income threshold))
                                (expense (merge-small expense-trees 'expense threshold))
 
-                               ;; Colours. A side's branches are the nodes of the first level that has
-                               ;; more than one node; everything further out takes its branch's colour,
-                               ;; everything nearer the hub stays neutral. The net result comes first, so
-                               ;; it always gets a slot.
-                               (slots sankey-palette)
+                               ;; Colours. Everything on the income side at the hub is green, on the
+                               ;; expense side red, and so is the net result: green for income, red for
+                               ;; a loss. Accounts further out follow sub-colours (docs/adr/0012).
+                               (net-colour (if (< surplus 0) sankey-red sankey-green))
+                               ;; one sequence for both sides, started over when used up: grey is
+                               ;; kept for Other and the hub
+                               (slot 0)
                                (next-slot (lambda ()
-                                            (if (null? slots)
-                                                sankey-neutral-colour
-                                                (let ((colour (car slots)))
-                                                  (set! slots (cdr slots))
-                                                  colour))))
-                               (net-colour (next-slot))
+                                            (let ((colour (list-ref sankey-sub-palette
+                                                                    (modulo slot (length sankey-sub-palette)))))
+                                              (set! slot (+ slot 1))
+                                              colour)))
                                (colours (make-hash-table))
-                               (paint (lambda (trees)
-                                        (letrec ((inherit
-                                                  (lambda (t colour)
-                                                    (hash-set! colours (tree-id t) colour)
-                                                    (for-each (lambda (c) (inherit c colour))
-                                                              (tree-children t))))
-                                                 (level
-                                                  (lambda (trees)
-                                                    (cond ((null? trees) #t)
-                                                          ((and (null? (cdr trees))
-                                                                (pair? (tree-children (car trees))))
-                                                           (hash-set! colours (tree-id (car trees))
-                                                                      sankey-neutral-colour)
-                                                           (level (tree-children (car trees))))
-                                                          (else
-                                                           (for-each
-                                                            (lambda (t)
-                                                              (inherit t (if (pair? (tree-id t))
-                                                                             sankey-neutral-colour
-                                                                             (next-slot))))
-                                                            trees))))))
-                                          (level trees))))
-                               (painted (begin (paint income) (paint expense) #t))
+                               (paint (lambda (trees side-colour)
+                                        (letrec ((paint-sub
+                                                  (lambda (t parent-colour depth)
+                                                    (let ((colour
+                                                           (case sub-colours
+                                                             ((gray) sankey-neutral-colour)
+                                                             ((distinct)
+                                                              (cond ((pair? (tree-id t)) sankey-neutral-colour)
+                                                                    ((= depth 2) (next-slot))
+                                                                    (else parent-colour)))
+                                                             (else parent-colour))))
+                                                      (hash-set! colours (tree-id t) colour)
+                                                      (for-each (lambda (c) (paint-sub c colour (+ depth 1)))
+                                                                (tree-children t))))))
+                                          (for-each (lambda (t)
+                                                      (hash-set! colours (tree-id t) side-colour)
+                                                      (for-each (lambda (c) (paint-sub c side-colour 2))
+                                                                (tree-children t)))
+                                                    trees))))
+                               (painted (begin (paint income sankey-green) (paint expense sankey-red) #t))
                                (colour-of (lambda (id) (hash-ref colours id sankey-neutral-colour)))
 
+                               ;; What a node shows. Names of accounts follow show-names?; the hub, the net
+                               ;; result and Other always keep theirs. The hover text keeps both.
+                               (shown (lambda (id label amount value colour account?)
+                                        (list id
+                                              (if (or show-names? (not account?)) label "")
+                                              (if show-balances? (money amount) "")
+                                              value colour
+                                              (string-append label ": " (money amount)))))
                                (node (lambda (t)
-                                       (list (tree-id t) (tree-label t) (money (tree-value t))
-                                             (tree-value t) (colour-of (tree-id t)))))
+                                       (shown (tree-id t) (tree-label t) (tree-value t) (tree-value t)
+                                              (colour-of (tree-id t)) (not (pair? (tree-id t))))))
+                               (side-colour (lambda (side) (if (eq? side 'in) sankey-green sankey-red)))
                                (flat-node (lambda (side)
                                             (lambda (f)
-                                              (list (list side (car f)) (car f) (money (cdr f))
-                                                    (cdr f) sankey-neutral-colour))))
+                                              (shown (list side (car f)) (car f) (cdr f) (cdr f)
+                                                     (side-colour side) #t))))
                                (net-node (lambda (label)
-                                           (list 'net label (money (abs surplus)) (abs surplus) net-colour)))
+                                           (shown 'net label (abs surplus) (abs surplus) net-colour #f)))
                                (hub-label (if (= hub-total revenue) (G_ "Revenue") (G_ "Total")))
 
                                (income-levels (tree-levels income))
@@ -352,8 +389,8 @@
                                (columns (filter pair?
                                                 (append (reverse (outer income-levels))
                                                         (list nearest-in
-                                                              (list (list 'hub hub-label (money hub-total)
-                                                                          hub-total sankey-neutral-colour))
+                                                              (list (shown 'hub hub-label hub-total hub-total
+                                                                           sankey-neutral-colour #f))
                                                               nearest-out)
                                                         (outer expense-levels))))
                                (hub-column (+ (length (outer income-levels)) (if (null? nearest-in) 0 1)))
@@ -387,7 +424,7 @@
                                (links (append
                                        (inward income)
                                        (map (lambda (f)
-                                              (list (list 'in (car f)) 'hub (cdr f) sankey-neutral-colour
+                                              (list (list 'in (car f)) 'hub (cdr f) sankey-green
                                                     (hover (car f) hub-label (cdr f))))
                                             extra-in)
                                        (if (< surplus 0)
@@ -396,7 +433,7 @@
                                            '())
                                        (outward expense)
                                        (map (lambda (f)
-                                              (list 'hub (list 'out (car f)) (cdr f) sankey-neutral-colour
+                                              (list 'hub (list 'out (car f)) (cdr f) sankey-red
                                                     (hover hub-label (car f) (cdr f))))
                                             extra-out)
                                        (if (> surplus 0)

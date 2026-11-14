@@ -7,7 +7,8 @@ Two reports for GnuCash desktop 5.16 that draw Sankey diagrams, under **Reports 
 
 They are Guile Scheme files that GnuCash loads at start. The diagram is plain SVG, without JavaScript, so it
 works in the old browser engine of the Windows build, prints, and survives *Export as HTML*. Design decisions:
-[ADR-0011](../docs/adr/0011-sankey-reports-in-gnucash-desktop.md).
+[ADR-0011](../docs/adr/0011-sankey-reports-in-gnucash-desktop.md),
+[ADR-0012](../docs/adr/0012-sankey-label-options-fixed-colours-one-day-default.md).
 
 ## Screenshots
 
@@ -34,7 +35,7 @@ from and out to the trading account:
    `~/.local/share/gnucash` on Linux). Either from the repository:
 
    ```
-   ./mvnw -pl gnucash-reports package -Pinstall-desktop
+   ./mvnw -pl gnucash-reports -am install -Pinstall-desktop
    ```
 
    (add `-Dgnucash.userdata=<folder>` for a folder other than `%APPDATA%/GnuCash`), or by unpacking
@@ -90,11 +91,34 @@ Difference below the diagram equal the Cash Flow report's for the same options.
 
 ### Options added to the standard ones
 
+Both reports open on **one day, today**: GnuCash runs a report as soon as it is opened, and a long period on a
+large book takes long. Choose the period in *Options > General*.
+
 | Option (Display tab) | Default | Meaning |
 |---|---|---|
 | Minimum share (%) | 1 | Accounts below this share of the total are merged into *Other* (per parent). 0 shows all. |
 | Width | 1100 | Width of the diagram in pixels. |
 | Height | 600 | Height in pixels. The diagram grows when the accounts do not fit. |
+| Show account names | on | Off: account nodes show their amount only. The hub, *Net income*/*Net loss* and *Other* keep their names. |
+| Show Full Account Names | off (Income & Expense), on (Cash Flow) | Names with their parent accounts. |
+| Show balances | on | Off: no node shows an amount. |
+| Sub-account colours | Same as parent | How accounts below the first level are coloured; see below. |
+
+Hover texts always show name and amount, whatever the options.
+
+### Colours
+
+Income is green and expenses red: in the Income & Expense Sankey the first level on each side, everything else
+that feeds the hub from the income side (refunds, trading gains), and the net result (*Net income* green,
+*Net loss* red); in the Cash Flow Sankey the sources on the left green and the targets on the right red. The
+hub is grey. *Sub-account colours* decides the rest:
+
+- **Same as parent**: deeper accounts take their side's green or red. In the Cash Flow Sankey the selected
+  accounts are grey and each ribbon is green coming in and red going out.
+- **Gray**: deeper accounts (Cash Flow: the selected accounts and the ribbons) are grey.
+- **Distinct colours**: each second-level account (Cash Flow: each selected account), largest first, gets its
+  own colour, never green or red; accounts below it and its ribbons share it. Income and expenses share one
+  sequence of six colours, which starts over when used up.
 
 Hover over a node or ribbon for its full name and amount; a name is cut in its label only when there is no room
 for it anywhere near the node.

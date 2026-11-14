@@ -20,6 +20,10 @@ class IncomeExpenseSankeyTest {
     private static final String STATEMENT = "Income Statement November";
     private static final String DOT = GnuCash.SEPARATOR;
 
+    static final String GREEN = "#008300";
+    static final String RED = "#e34948";
+    static final String NEUTRAL = "#898781";
+
     @Test
     void totalsAreTheIncomeStatements() {
         Report sankey = GnuCash.report(SANKEY, SAMPLE);
@@ -122,6 +126,114 @@ class IncomeExpenseSankeyTest {
         assertThat(sankey.hasHoverText("Interest → Income: €12.50")).isTrue();
         assertThat(sankey.data("expenses")).isEqualByComparingTo("801.00");
         assertThat(sankey.data("net-income")).isEqualByComparingTo("2211.50");
+    }
+
+    @Test
+    void incomeIsGreenExpensesRedAndSubAccountsTakeTheirParentsColourByDefault() {
+        Report sankey = GnuCash.report(SANKEY, SAMPLE);
+
+        assertThat(sankey.nodeColour("Income")).isEqualTo(GREEN);
+        assertThat(sankey.nodeColour("Salary")).isEqualTo(GREEN);
+        assertThat(sankey.nodeColour("Expenses")).isEqualTo(RED);
+        assertThat(sankey.nodeColour("Rent")).isEqualTo(RED);
+        assertThat(sankey.nodeColour("Groceries")).isEqualTo(RED);
+        assertThat(sankey.nodeColour("Net income")).isEqualTo(GREEN);
+        assertThat(sankey.nodeColour("Revenue")).isEqualTo(NEUTRAL);
+        assertThat(sankey.ribbonColour("Salary → Income: €2,000.00")).isEqualTo(GREEN);
+        assertThat(sankey.ribbonColour("Expenses → Rent: €520.00")).isEqualTo(RED);
+        assertThat(sankey.ribbonColour("Revenue → Net income: €1,260.00")).isEqualTo(GREEN);
+    }
+
+    @Test
+    void aLossIsRed() {
+        Report sankey = GnuCash.report(SANKEY, LOSS);
+
+        assertThat(sankey.nodeColour("Net loss")).isEqualTo(RED);
+        assertThat(sankey.ribbonColour("Net loss → Total: €3,740.00")).isEqualTo(RED);
+    }
+
+    @Test
+    void refundsFeedingTheHubAreOnTheIncomeSideAndGreen() {
+        Report sankey = GnuCash.report(SANKEY, RICH);
+
+        assertThat(sankey.nodeColour("Expenses" + DOT + "Food" + DOT + "Refunds")).isEqualTo(GREEN);
+    }
+
+    @Test
+    void graySubAccountsLeaveOnlyTheFirstLevelColoured() {
+        Report sankey = GnuCash.report(SANKEY + " gray", SAMPLE);
+
+        assertThat(sankey.nodeColour("Income")).isEqualTo(GREEN);
+        assertThat(sankey.nodeColour("Expenses")).isEqualTo(RED);
+        assertThat(sankey.nodeColour("Salary")).isEqualTo(NEUTRAL);
+        assertThat(sankey.nodeColour("Rent")).isEqualTo(NEUTRAL);
+        assertThat(sankey.nodeColour("Groceries")).isEqualTo(NEUTRAL);
+    }
+
+    @Test
+    void distinctSubAccountsTakeSlotsWithoutGreenAndRedAndPassThemDown() {
+        Report sankey = GnuCash.report(SANKEY + " distinct", SAMPLE);
+
+        assertThat(sankey.nodeColour("Income")).isEqualTo(GREEN);
+        assertThat(sankey.nodeColour("Expenses")).isEqualTo(RED);
+        // the second level in order, income first, largest first: blue, orange, aqua, yellow
+        assertThat(sankey.nodeColour("Salary")).isEqualTo("#2a78d6");
+        assertThat(sankey.nodeColour("Rent")).isEqualTo("#eb6834");
+        assertThat(sankey.nodeColour("Misc")).isEqualTo("#1baf7a");
+        assertThat(sankey.nodeColour("Food")).isEqualTo("#eda100");
+        assertThat(sankey.nodeColour("Groceries")).isEqualTo("#eda100");
+    }
+
+    @Test
+    void distinctColoursStartOverWhenUsedUpInsteadOfTurningGray() {
+        Report sankey = GnuCash.report(SANKEY + " distinct", Books.many());
+
+        // one sequence for both sides: Salary takes the first colour, the expenses the next ones
+        assertThat(sankey.nodeColour("Salary")).isEqualTo("#2a78d6");
+        assertThat(sankey.nodeColour("Rent")).isEqualTo("#eb6834");
+        assertThat(sankey.nodeColour("Misc")).isEqualTo("#1baf7a");
+        assertThat(sankey.nodeColour("Food")).isEqualTo("#eda100");
+        assertThat(sankey.nodeColour("Phone")).isEqualTo("#e87ba4");
+        assertThat(sankey.nodeColour("Travel")).isEqualTo("#6250d6");
+        // six used: start over
+        assertThat(sankey.nodeColour("Gym")).isEqualTo("#2a78d6");
+        assertThat(sankey.nodeColour("Garden")).isEqualTo("#eb6834");
+        assertThat(sankey.nodeColour("Pets")).isEqualTo("#1baf7a");
+    }
+
+    @Test
+    void fullAccountNamesOnRequest() {
+        Report sankey = GnuCash.report(SANKEY + " full names", SAMPLE);
+
+        assertThat(sankey.labels()).contains("Expenses" + DOT + "Rent €520.00", "Revenue €2,000.00");
+        assertThat(sankey.hasNode("Expenses" + DOT + "Food" + DOT + "Groceries")).isTrue();
+    }
+
+    @Test
+    void withoutNamesAccountsShowTheirAmountAndOtherNodesKeepTheirNames() {
+        Report sankey = GnuCash.report(SANKEY + " without names", SAMPLE);
+
+        assertThat(sankey.labels()).contains("€520.00", "Revenue €2,000.00", "Net income €1,260.00")
+                .noneMatch(label -> label.contains("Rent"));
+        // still one hover away
+        assertThat(sankey.hasHoverText("Rent: €520.00")).isTrue();
+    }
+
+    @Test
+    void withoutNamesAndBalancesOnlyTheHubAndTheNetResultAreLabelled() {
+        Report sankey = GnuCash.report(SANKEY + " without labels", SAMPLE);
+
+        assertThat(sankey.labels()).containsExactlyInAnyOrder("Revenue", "Net income");
+        assertThat(sankey.hasHoverText("Rent: €520.00")).isTrue();
+        assertThat(sankey.hasHoverText("Revenue: €2,000.00")).isTrue();
+    }
+
+    @Test
+    void byDefaultTheReportCoversOneDay() {
+        Report sankey = GnuCash.report("Income & Expense Sankey", SAMPLE);
+
+        // GnuCash writes a period of one day as that day alone, e.g. "11/14/2026"; a longer one as "a to b"
+        assertThat(sankey.title()).matches("Income & Expense Sankey - \\d\\d/\\d\\d/\\d{4}");
     }
 
     @Test

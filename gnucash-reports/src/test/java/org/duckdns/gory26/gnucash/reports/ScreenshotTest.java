@@ -42,7 +42,8 @@ class ScreenshotTest {
     private static final Map<String, Supplier<String>> BOOKS = Map.of(
             "sample", Books::sample,
             "rich", Books::rich,
-            "loss", Books::loss);
+            "loss", Books::loss,
+            "many", Books::many);
     private static final Map<String, String> DATABASES = new ConcurrentHashMap<>();
 
     @ParameterizedTest(name = "{0}")
@@ -51,12 +52,17 @@ class ScreenshotTest {
             "income-expense-rich,    Income Expense Sankey November,        rich",
             "income-expense-merged,  Income Expense Sankey November merged, rich",
             "income-expense-loss,    Income Expense Sankey November,        loss",
+            "income-expense-distinct, Income Expense Sankey November distinct, rich",
+            // more second-level accounts than colours: the colours start over
+            "income-expense-many-distinct, Income Expense Sankey November distinct, many",
+            "income-expense-bare,    Income Expense Sankey November without labels, rich",
             // with trading flows, so that one picture shows them; they are hidden by default
             "cash-flow,              Cash Flow Sankey November with trading, sample",
             "cash-flow-rich,         Cash Flow Sankey November,             rich",
             // the exchange through Trading touches two selected accounts: the order must keep ribbons from crossing
             "cash-flow-rich-trading, Cash Flow Sankey November with trading, rich",
             "cash-flow-merged,       Cash Flow Sankey November merged,      rich",
+            "cash-flow-distinct,     Cash Flow Sankey November distinct,    rich",
     })
     void looksLikeItsBaseline(String baseline, String reportName, String book) throws IOException {
         String database = DATABASES.computeIfAbsent(book, name -> BOOKS.get(name).get());

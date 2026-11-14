@@ -75,6 +75,23 @@ final class Books {
         return book.database;
     }
 
+    /**
+     * The dump plus five more expense accounts below Expenses, so that the second level has nine accounts: more
+     * than there are distinct colours. Largest first: Salary, Rent, Misc, Food (20.00), then Phone 15.00, Travel
+     * 14.00, Gym 13.00, Garden 12.00, Pets 11.00.
+     */
+    static String many() {
+        Books book = new Books(SampleBook.freshCopy());
+        LocalDate day = LocalDate.of(2026, 11, 12);
+        String[] names = {"Phone", "Travel", "Gym", "Garden", "Pets"};
+        for(int i = 0; i < names.length; i++) {
+            String account = book.account(names[i], "EXPENSE", EXPENSES);
+            long cents = 1500 - 100L * i;
+            book.transaction(day, names[i], leg(account, cents), leg(SampleBook.CASH, -cents));
+        }
+        return book.database;
+    }
+
     private record Leg(String account, long cents) {
     }
 
