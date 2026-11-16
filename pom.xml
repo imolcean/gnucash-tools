@@ -20,6 +20,8 @@
         <module>gnucash-book</module>
         <module>gnucash-togo</module>
         <module>gnucash-reports</module>
+        <module>onec-codegen-maven-plugin</module>
+        <module>onec-personal</module>
     </modules>
 
     <properties>
