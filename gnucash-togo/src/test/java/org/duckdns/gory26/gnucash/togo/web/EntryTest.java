@@ -256,6 +256,15 @@ class EntryTest extends AppTest {
                 .contains("<input id=\"to-label\" name=\"toLabel\"");
     }
 
+    /** entry-form.js finds the × by its marker; app.css shows it only right after a box that holds text. */
+    @Test
+    void accountBoxesCarryAClearButtonRightAfterThem() throws Exception {
+        assertThat(page("/")).containsPattern(
+                "<input id=\"from-label\"[^>]*>\\s*<button type=\"button\" class=\"clear\" tabindex=\"-1\" data-clear-account aria-label=\"Clear\">")
+                .containsPattern(
+                "<input id=\"to-label\"[^>]*>\\s*<button type=\"button\" class=\"clear\" tabindex=\"-1\" data-clear-account aria-label=\"Clear\">");
+    }
+
     @Test
     void enterTakesTheFirstAccountTheListOffers() throws Exception {
         String form = fragment(post("/entry/pick").param("first", "to").param("toLabel", "food groc"));

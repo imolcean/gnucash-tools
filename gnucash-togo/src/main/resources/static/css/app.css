@@ -108,6 +108,14 @@ a.item:active { background: var(--pico-secondary-background); }
 .suggestions button { all: unset; box-sizing: border-box; display: block; width: 100%; padding: .45rem .6rem; cursor: pointer;
                       border-bottom: 1px solid var(--pico-muted-border-color); }
 .suggestions button:hover, .suggestions button:focus { background: var(--pico-secondary-background); color: var(--pico-secondary-inverse); }
+/* account box: the × sits inside the box at its right end, shown only while the box holds text */
+.picker .box { position: relative; }
+.picker .box input { padding-right: 2.5rem; }
+.picker .clear { all: unset; position: absolute; top: 0; right: 0; bottom: 0; width: 2.5rem; display: flex;
+                 align-items: center; justify-content: center; cursor: pointer; color: var(--pico-muted-color);
+                 touch-action: manipulation; }
+.picker .clear .icon { margin: 0; }
+.picker .box input:placeholder-shown + .clear { display: none; }
 .chips { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; margin-bottom: .4rem; }
 .chips:empty { display: none; }
 .chips .chip { font-size: .85rem; padding: .2rem .5rem; }

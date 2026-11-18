@@ -4,7 +4,7 @@
 // visible field instead of saving; Enter on the description saves as usual. Picking an account moves on the same way.
 //
 // An account box keeps only an account picked from its list: Enter takes the first suggestion, and typed text that
-// was never picked is emptied on leaving. The next box opens its list as soon as it gets the focus.
+// was never picked is emptied on leaving. The next box opens its list as soon as it gets the focus. Its × empties it.
 //
 // The amount is typed as on a card terminal: digits only, the point stays data-decimals places from the right,
 // so 1, 2, 3 shows 0.01, 0.12, 1.23; Backspace takes the last digit off again. It also takes GnuCash's calculator
@@ -164,6 +164,23 @@
         const picker = pick.closest('[data-account-picker]');
         guid(picker).value = pick.value.split(':')[1]; // picked: leaving the box must not empty it
         next(box(picker))?.focus();
+    });
+
+    // The × in an account box empties it and un-picks. Its pointerdown is cancelled, as on the operator strip, so a
+    // focused box keeps the focus and the keyboard, and lists the recent accounts again as an empty box does. A box
+    // without the focus is only emptied: it doesn't take the focus, so no keyboard pops up.
+    document.addEventListener('pointerdown', e => {
+        if (e.target.closest('[data-clear-account]')) e.preventDefault();
+    });
+
+    document.addEventListener('click', e => {
+        const clear = e.target.closest('[data-clear-account]');
+        if (!clear) return;
+        const picker = clear.closest('[data-account-picker]');
+        const field = box(picker);
+        field.value = '';
+        guid(picker).value = '';
+        if (document.activeElement === field) field.dispatchEvent(new Event('input', {bubbles: true}));
     });
 
     document.addEventListener('keydown', e => {
