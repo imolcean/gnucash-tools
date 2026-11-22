@@ -36,3 +36,4 @@ build/
 
 ### Local deployment notes ###
 /docs/compose.yml
+/docs/sketches/
