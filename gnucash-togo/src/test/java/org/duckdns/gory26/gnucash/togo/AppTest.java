@@ -4,6 +4,7 @@ import org.duckdns.gory26.gnucash.book.SampleBook;
 import org.duckdns.gory26.gnucash.togo.session.Sessions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -26,6 +27,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(FixedClock.class)
+@Tag("docker")
 public abstract class AppTest {
 
     protected static final String BOOK = "app_book";

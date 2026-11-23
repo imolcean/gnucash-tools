@@ -1,5 +1,6 @@
 package org.duckdns.gory26.gnucash.reports;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the opposite in the standard report (ADR-0011). So the Sankey without trading flows is compared with the
  * standard report with its option ON, and the Sankey with trading flows with the standard report's default.
  */
+@Tag("docker")
 class CashFlowSankeyTest {
 
     private static final String SAMPLE = Books.sample();

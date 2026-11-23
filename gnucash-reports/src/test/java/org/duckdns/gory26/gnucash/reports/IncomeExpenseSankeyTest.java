@@ -1,5 +1,6 @@
 package org.duckdns.gory26.gnucash.reports;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -10,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * The Income &amp; Expense Sankey against GnuCash's own Income Statement, both run by GnuCash 5.16 on the same
  * book for November 2026 in EUR. The amounts written out here were worked out by hand from the books' rows.
  */
+@Tag("docker")
 class IncomeExpenseSankeyTest {
 
     private static final String SAMPLE = Books.sample();

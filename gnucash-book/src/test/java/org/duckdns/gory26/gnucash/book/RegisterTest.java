@@ -1,5 +1,6 @@
 package org.duckdns.gory26.gnucash.book;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -9,6 +10,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
+@Tag("docker")
 class RegisterTest {
 
     private final GnuCashBook book = new GnuCashBook(SampleBook.freshCopy(), SampleBook.TODAY);

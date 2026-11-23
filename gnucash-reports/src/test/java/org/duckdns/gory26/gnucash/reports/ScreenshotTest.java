@@ -1,5 +1,6 @@
 package org.duckdns.gory26.gnucash.reports;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * change, {@code ./mvnw -pl gnucash-reports -am verify -Dsankey.baselines.update=true} rewrites the baselines;
  * look at the new PNGs before committing them.
  */
+@Tag("docker")
 class ScreenshotTest {
 
     private static final int WIDTH = 1200;

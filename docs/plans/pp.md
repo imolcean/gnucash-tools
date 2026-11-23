@@ -1,6 +1,6 @@
 # Plan: pp, an adapter for the Portfolio Performance file
 
-**Status (2026-11-13):** design agreed in the grilling session, nothing implemented. Waiting for the fixture file (see "Needed from you") and the go. Update this line when a milestone finishes.
+**Status (2026-11-13):** design agreed in the grilling session, nothing implemented. Waiting for the fixture file (see "Needed from you") and the go. Update this line when a milestone finishes. 2026-11-23: still not implemented; the plan moved to the gnucash-tools repository.
 
 ## Context
 

@@ -47,4 +47,14 @@
         </dependencies>
     </dependencyManagement>
 
+    <profiles>
+        <!-- ./mvnw verify -P fast: skips the tests tagged "docker" (Testcontainers), so it runs without Docker. -->
+        <profile>
+            <id>fast</id>
+            <properties>
+                <excludedGroups>docker</excludedGroups>
+            </properties>
+        </profile>
+    </profiles>
+
 </project>

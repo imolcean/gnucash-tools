@@ -1,5 +1,6 @@
 package org.duckdns.gory26.gnucash.book;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -14,6 +15,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("docker")
 class AccountTreeTest {
 
     private static final LocalDate DUMP_DAY = LocalDate.of(2026, 11, 4);

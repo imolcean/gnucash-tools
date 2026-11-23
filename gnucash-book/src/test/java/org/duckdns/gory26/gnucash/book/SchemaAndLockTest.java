@@ -1,5 +1,6 @@
 package org.duckdns.gory26.gnucash.book;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
@@ -7,6 +8,7 @@ import javax.sql.DataSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("docker")
 class SchemaAndLockTest {
 
     private final DataSource db = SampleBook.freshCopy();

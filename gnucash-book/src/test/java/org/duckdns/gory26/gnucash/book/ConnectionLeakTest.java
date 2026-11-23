@@ -1,6 +1,7 @@
 package org.duckdns.gory26.gnucash.book;
 
 import org.jspecify.annotations.NullMarked;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.datasource.DelegatingDataSource;
 
@@ -19,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Every call hands its connection back. The app runs the book on a pool of two connections per session, so
  * one leaked connection per page load stalls the third page.
  */
+@Tag("docker")
 class ConnectionLeakTest {
 
     /** Counts connections handed out and not yet closed. */

@@ -2,6 +2,7 @@ package org.duckdns.gory26.gnucash.book;
 
 import org.duckdns.gory26.gnucash.book.WriteRefusedException.Reason;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
@@ -15,6 +16,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Tag("docker")
 class WritesTest {
 
     /** ADR-0007: the app's rows equal the rows desktop wrote for the same entry, minus GUIDs, enter date and slot ids. */
