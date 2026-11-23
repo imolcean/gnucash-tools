@@ -9,19 +9,16 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.duckdns.gory26</groupId>
-    <artifactId>fincore-parent</artifactId>
+    <artifactId>gnucash-tools-parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>fincore</name>
-    <description>Fincore domain model; adapters and tooling for GnuCash, Portfolio Performance, etc.</description>
+    <name>gnucash-tools</name>
+    <description>Adapters and tooling for GnuCash: the SQL book, a phone front end, and desktop reports</description>
 
     <modules>
-        <module>fincore-core</module>
         <module>gnucash-book</module>
         <module>gnucash-togo</module>
         <module>gnucash-reports</module>
-        <module>onec-codegen-maven-plugin</module>
-        <module>onec-personal</module>
     </modules>
 
     <properties>
@@ -41,7 +38,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- Same ArchUnit version jmolecules-starter-test brings into fincore-core. -->
+            <!-- Same ArchUnit version jmolecules-starter-test brings in. -->
             <dependency>
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit-junit5</artifactId>
