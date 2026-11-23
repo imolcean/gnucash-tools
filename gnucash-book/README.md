@@ -22,7 +22,7 @@ Releases are on GitHub Packages (ADR-0013). Add the repository and the dependenc
 <dependency>
     <groupId>org.duckdns.gory26</groupId>
     <artifactId>gnucash-book</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
 </dependency>
 ```
 
@@ -40,7 +40,7 @@ project on Spring Boot's dependency management; anything else sets them):
 <dependency>
     <groupId>org.duckdns.gory26</groupId>
     <artifactId>gnucash-book</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
     <type>test-jar</type>
     <scope>test</scope>
 </dependency>

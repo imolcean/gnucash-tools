@@ -65,6 +65,9 @@
                     <!-- clean drops the optional elements, among them the developers inherited from
                          spring-boot-starter-parent, which are not ours. These four are kept; licenses always are. -->
                     <flattenMode>clean</flattenMode>
+                    <!-- all: every runtime dependency with the version this build resolved (Spring Boot pins some), so
+                         a consumer runs what the tests ran. -->
+                    <flattenDependencyMode>all</flattenDependencyMode>
                     <pomElements>
                         <name>resolve</name>
                         <description>resolve</description>
