@@ -57,4 +57,13 @@
         </profile>
     </profiles>
 
+    <!-- gnucash-book (and this parent pom) go to GitHub Packages on a tag gnucash-book/v1.2.3
+         (.github/workflows/gnucash-book-publish.yml, ADR-0013). The workflow deploys those two only (-pl gnucash-book -am). -->
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/imolcean/gnucash-tools</url>
+        </repository>
+    </distributionManagement>
+
 </project>

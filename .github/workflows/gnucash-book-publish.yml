@@ -1,0 +1,37 @@
+name: gnucash-book publish
+
+# On a tag gnucash-book/v1.2.3: tests gnucash-book and deploys it (jar, test-jar) with the parent pom, both at
+# version 1.2.3, to GitHub Packages (https://maven.pkg.github.com/imolcean/gnucash-tools). ADR-0013.
+
+on:
+  push:
+    tags: ['gnucash-book/v*']
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Writes a settings.xml with server "github" (the id in the root pom) authenticated by GITHUB_TOKEN.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      - name: Set the version from the tag
+        run: ./mvnw -B -q versions:set -DnewVersion="${GITHUB_REF_NAME#gnucash-book/v}" -DgenerateBackupPoms=false
+
+      # The tests start Postgres with Testcontainers; the runner has Docker.
+      - name: Test and deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./mvnw -B deploy -pl gnucash-book -am
