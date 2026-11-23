@@ -4,6 +4,7 @@ name: gnucash-reports test image
 # to GitHub Container Registry under the name in gnucash-reports/pom.xml (property gnucash.image), e.g.
 #   ghcr.io/<owner>/gnucash-headless:5.16-1
 # The tag is pinned by the tests, so a change to the Dockerfile comes with a new tag in the pom.
+# Also runs on demand (Actions > Run workflow), e.g. to publish the current tag after a registry move.
 #
 # The workflows that run the tests do not wait for this one: when the tag is not in the registry yet, they
 # build the image themselves from the same Dockerfile (see "GnuCash test image" there).
