@@ -55,6 +55,40 @@
 
     <build>
         <plugins>
+            <!-- The installed and deployed pom has no parent and spells out its dependency versions, so a consumer
+                 fetches gnucash-book alone (ADR-0013). -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.9.0</version>
+                <configuration>
+                    <!-- clean drops the optional elements, among them the developers inherited from
+                         spring-boot-starter-parent, which are not ours. These four are kept; licenses always are. -->
+                    <flattenMode>clean</flattenMode>
+                    <pomElements>
+                        <name>resolve</name>
+                        <description>resolve</description>
+                        <url>resolve</url>
+                        <scm>resolve</scm>
+                    </pomElements>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten-clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- gnucash-togo's tests reuse SampleBook and the sample dump. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

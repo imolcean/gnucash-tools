@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project child.project.url.inherit.append.path="false" xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -14,6 +14,18 @@
     <packaging>pom</packaging>
     <name>gnucash-tools</name>
     <description>Adapters and tooling for GnuCash: the SQL book, a phone front end, and desktop reports</description>
+    <!-- Own url, scm and licence instead of the ones inherited from spring-boot-starter-parent; modules keep them
+         as they are (the attributes stop Maven from appending the module name). -->
+    <url>https://github.com/imolcean/gnucash-tools</url>
+    <scm child.scm.url.inherit.append.path="false">
+        <url>https://github.com/imolcean/gnucash-tools</url>
+    </scm>
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/license/mit</url>
+        </license>
+    </licenses>
 
     <modules>
         <module>gnucash-book</module>
@@ -57,8 +69,8 @@
         </profile>
     </profiles>
 
-    <!-- gnucash-book (and this parent pom) go to GitHub Packages on a tag gnucash-book/v1.2.3
-         (.github/workflows/gnucash-book-publish.yml, ADR-0013). The workflow deploys those two only (-pl gnucash-book -am). -->
+    <!-- gnucash-book goes to GitHub Packages on a tag gnucash-book/v1.2.3, with a flattened pom that does not need this one
+         (.github/workflows/gnucash-book-publish.yml, ADR-0013). -->
     <distributionManagement>
         <repository>
             <id>github</id>

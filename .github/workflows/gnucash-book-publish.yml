@@ -1,7 +1,7 @@
 name: gnucash-book publish
 
-# On a tag gnucash-book/v1.2.3: tests gnucash-book and deploys it (jar, test-jar) with the parent pom, both at
-# version 1.2.3, to GitHub Packages (https://maven.pkg.github.com/imolcean/gnucash-tools). ADR-0013.
+# On a tag gnucash-book/v1.2.3: tests gnucash-book and deploys it (jar, test-jar, flattened pom without a parent) at
+# version 1.2.3 to GitHub Packages (https://maven.pkg.github.com/imolcean/gnucash-tools). ADR-0013.
 
 on:
   push:
@@ -34,4 +34,4 @@ jobs:
       - name: Test and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./mvnw -B deploy -pl gnucash-book -am
+        run: ./mvnw -B deploy -pl gnucash-book

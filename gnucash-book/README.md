@@ -22,13 +22,12 @@ Releases are on GitHub Packages (ADR-0013). Add the repository and the dependenc
 <dependency>
     <groupId>org.duckdns.gory26</groupId>
     <artifactId>gnucash-book</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
 </dependency>
 ```
 
-The release list is on the repository's *Packages* page. Maven also fetches `gnucash-tools-parent` at the same
-version, which holds the versions of gnucash-book's own dependencies (from Spring Boot's dependency management).
-Java 25 or later.
+The release list is on the repository's *Packages* page. The published pom has no parent and names its own
+dependency versions, so nothing else is fetched from this repository. MIT licence. Java 25 or later.
 
 ### Tests against the sample book
 
@@ -41,7 +40,7 @@ project on Spring Boot's dependency management; anything else sets them):
 <dependency>
     <groupId>org.duckdns.gory26</groupId>
     <artifactId>gnucash-book</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <type>test-jar</type>
     <scope>test</scope>
 </dependency>
@@ -91,4 +90,4 @@ package's settings (*Manage Actions access*), and let `actions/setup-java` write
 ## Releasing
 
 Push a tag `gnucash-book/v1.2.3`. `.github/workflows/gnucash-book-publish.yml` sets version 1.2.3, runs the tests
-and deploys the jar, the test-jar and the parent pom. A released version cannot be overwritten; a fix gets a new tag.
+and deploys the jar, the test-jar and the flattened pom. A released version cannot be overwritten; a fix gets a new tag.
