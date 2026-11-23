@@ -1,4 +1,4 @@
-;; Layout tests for (fincore sankey svg). Run with:
+;; Layout tests for (gnucash-tools sankey svg). Run with:
 ;;   guile sankey-svg-test.scm <path to sankey-svg.scm>
 ;; Exits 0 when every test passes. GnuCash is not needed.
 
@@ -7,7 +7,7 @@
              (sxml simple))
 
 (load (cadr (command-line)))
-(use-modules (fincore sankey svg))
+(use-modules (gnucash-tools sankey svg))
 
 (define (close? a b) (< (abs (- a b)) 0.01))
 

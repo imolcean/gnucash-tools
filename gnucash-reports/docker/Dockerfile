@@ -1,5 +1,5 @@
 # GnuCash 5.16 command line, Guile, and headless Firefox: the environment gnucash-reports' tests render in.
-# Published as ghcr.io/<owner>/fincore-gnucash-cli:<tag> by .github/workflows/gnucash-reports-image.yml;
+# Published as ghcr.io/<owner>/gnucash-headless:<tag> by .github/workflows/gnucash-reports-image.yml;
 # the tag is the gnucash.image property in gnucash-reports/pom.xml. Change both together.
 #
 # Ubuntu 26.10 because its archive carries exactly GnuCash 5.16 (ADR-0007 pins behaviour to that version)

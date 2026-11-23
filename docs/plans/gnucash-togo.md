@@ -194,7 +194,7 @@ Decisions from the M4 grilling (2026-11-04) are folded in below.
 - `.github/workflows/gnucash-togo-image.yml`, copied from paperless-agents `publish-image.yml`:
   - `paths:` filter on `gnucash-book/**`, `gnucash-togo/**`, `pom.xml` and `.mvn/**`;
   - the tests run `./mvnw -B verify`, including Testcontainers;
-  - pushes `ghcr.io/imolcean/fincore-gnucash-togo` with the tags `latest`, `sha-*` and semver from git tags `gnucash-togo/vX.Y.Z` (metadata-action `type=match`);
+  - pushes `ghcr.io/imolcean/gnucash-togo` with the tags `latest`, `sha-*` and semver from git tags `gnucash-togo/vX.Y.Z` (metadata-action `type=match`);
   - amd64 only.
 - `gnucash-togo/compose.yaml` (documentation, pasted into OMV):
   - `db-init` (`postgres:17.11`, one-shot) runs an **inline** idempotent `psql` script. It:

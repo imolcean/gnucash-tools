@@ -1,7 +1,7 @@
 name: gnucash-reports release
 
 # On a tag gnucash-reports/v1.2.3: tests gnucash-reports and attaches gnucash-reports-1.2.3.zip (the
-# fincore-reports folder a user copies into GnuCash's user data folder) to a GitHub release for that tag.
+# gnucash-tools-reports folder a user copies into GnuCash's user data folder) to a GitHub release for that tag.
 
 on:
   push:

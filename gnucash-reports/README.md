@@ -39,13 +39,13 @@ from and out to the trading account:
    ```
 
    (add `-Dgnucash.userdata=<folder>` for a folder other than `%APPDATA%/GnuCash`), or by unpacking
-   `gnucash-reports-<version>.zip` from a release there. Both leave a folder `fincore-reports` in it.
+   `gnucash-reports-<version>.zip` from a release there. Both leave a folder `gnucash-tools-reports` in it.
 
 2. Once, add this line to `config-user.scm` in GnuCash's config folder (`%APPDATA%\GnuCash` on Windows,
    `~/.config/gnucash` on Linux); create the file if it does not exist:
 
    ```scheme
-   (load ((@ (gnucash core-utils) gnc-build-userdata-path) "fincore-reports/load.scm"))
+   (load ((@ (gnucash core-utils) gnc-build-userdata-path) "gnucash-tools-reports/load.scm"))
    ```
 
    Maven never touches this file.
@@ -53,6 +53,9 @@ from and out to the trading account:
 3. Restart GnuCash.
 
 To update, repeat step 1. To remove, delete the line and the folder.
+
+Updating from a release made in the `fincore` repository: the folder was called `fincore-reports` then. Delete it,
+and in `config-user.scm` change `"fincore-reports/load.scm"` to `"gnucash-tools-reports/load.scm"`.
 
 ## How the numbers are defined
 
@@ -138,9 +141,9 @@ totals always show the true amounts.
 
 | Path | What |
 |---|---|
-| `src/main/scheme/fincore-reports/sankey-svg.scm` | Layout and drawing, pure Guile. |
-| `src/main/scheme/fincore-reports/income-expense-sankey.scm`, `cash-flow-sankey.scm` | The reports. |
-| `src/main/scheme/fincore-reports/load.scm` | Loads the three files; the only file `config-user.scm` names. |
+| `src/main/scheme/gnucash-tools-reports/sankey-svg.scm` | Layout and drawing, pure Guile. |
+| `src/main/scheme/gnucash-tools-reports/income-expense-sankey.scm`, `cash-flow-sankey.scm` | The reports. |
+| `src/main/scheme/gnucash-tools-reports/load.scm` | Loads the three files; the only file `config-user.scm` names. |
 | `src/test/scheme/sankey-svg-test.scm` | Layout tests in Guile (SRFI-64), run inside the image by `SankeyLayoutTest`. |
 | `src/test/java` | Tests that run GnuCash on copies of `gnucash-book`'s sample book. |
 | `src/test/resources/gnucash-config` | The test user data folder: `config-user.scm` and saved report configurations with fixed dates. |
@@ -153,7 +156,7 @@ The tests run GnuCash in the image named by the property `gnucash.image` in `pom
 build it locally:
 
 ```
-docker build -t ghcr.io/imolcean/fincore-gnucash-cli:5.16-1 gnucash-reports/docker
+docker build -t ghcr.io/imolcean/gnucash-headless:5.16-1 gnucash-reports/docker
 ```
 
 When the Dockerfile changes, raise the revision at the end of the tag in `pom.xml` and refresh the baselines.

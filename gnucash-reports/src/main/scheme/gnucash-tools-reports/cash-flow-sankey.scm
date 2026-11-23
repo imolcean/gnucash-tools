@@ -6,16 +6,16 @@
 ;; each flow belongs to; the standard calculation does not keep that. One option differs on purpose: "Include
 ;; Trading Accounts in report" does what it says here (on shows the trading flows, off hides them), while the
 ;; standard report does the opposite; see cash-flows below.
-;; See docs/adr/0011 in the fincore repository.
+;; See docs/adr/0011 in the gnucash-tools repository.
 
-(define-module (fincore reports cash-flow-sankey))
+(define-module (gnucash-tools reports cash-flow-sankey))
 (use-modules (srfi srfi-1))
 (use-modules (gnucash engine))
 (use-modules (gnucash utilities))
 (use-modules (gnucash core-utils))
 (use-modules (gnucash app-utils))
 (use-modules (gnucash report))
-(use-modules (fincore sankey svg))
+(use-modules (gnucash-tools sankey svg))
 
 (define reportname (N_ "Cash Flow Sankey"))
 

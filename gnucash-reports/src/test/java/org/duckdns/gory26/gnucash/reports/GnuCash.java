@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * GnuCash 5.16's command line in one shared container, set up the way a user's desktop is after installing
- * the reports: {@code fincore-reports/} in the user data folder and a {@code config-user.scm} that loads it.
+ * the reports: {@code gnucash-tools-reports/} in the user data folder and a {@code config-user.scm} that loads it.
  * The folder also holds the saved report configurations the tests run by name, since {@code gnucash-cli}
  * cannot pass report options.
  * <p>
@@ -26,7 +26,7 @@ final class GnuCash {
     /** What GnuCash puts between the parts of a full account name here: the image has no preferences backend. */
     static final String SEPARATOR = ".";
 
-    private static final String STAGING = "/opt/fincore";
+    private static final String STAGING = "/opt/gnucash-tools";
     private static final String USER_DATA = "/home/gnucash/userdata";
     private static final String WORK = "/home/gnucash/work";
     private static final String BOOK_HOST = "host.testcontainers.internal";
@@ -41,8 +41,8 @@ final class GnuCash {
                 .withAccessToHost(true)
                 .withEnv("GNC_CONFIG_HOME", USER_DATA)
                 .withEnv("GNC_DATA_HOME", USER_DATA)
-                .withCopyFileToContainer(MountableFile.forClasspathResource("fincore-reports"),
-                        STAGING + "/fincore-reports")
+                .withCopyFileToContainer(MountableFile.forClasspathResource("gnucash-tools-reports"),
+                        STAGING + "/gnucash-tools-reports")
                 .withCopyFileToContainer(MountableFile.forClasspathResource("gnucash-config"), STAGING)
                 .withCopyFileToContainer(
                         MountableFile.forHostPath(Path.of(System.getProperty("sankey.scheme.tests.dir"))),
@@ -87,7 +87,7 @@ final class GnuCash {
     /** Runs a Guile test script from {@code src/test/scheme} on a report source file; the result is Guile's. */
     static ExecResult guileTest(String script, String source) {
         return exec("guile", "--no-auto-compile", STAGING + "/tests/" + script,
-                USER_DATA + "/fincore-reports/" + source);
+                USER_DATA + "/gnucash-tools-reports/" + source);
     }
 
     private static void run(String shell) {

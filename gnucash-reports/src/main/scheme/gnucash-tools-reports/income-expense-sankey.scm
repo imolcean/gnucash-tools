@@ -3,16 +3,16 @@
 ;; Income accounts flow from the left into one hub, the hub pays the expense accounts on the right, and what
 ;; is left over is the net income. The amounts come from the same calls as the standard report
 ;; (reports/standard/income-statement.scm, GnuCash 5.16), so the totals below the diagram match it.
-;; See docs/adr/0011 in the fincore repository.
+;; See docs/adr/0011 in the gnucash-tools repository.
 
-(define-module (fincore reports income-expense-sankey))
+(define-module (gnucash-tools reports income-expense-sankey))
 (use-modules (srfi srfi-1))
 (use-modules (gnucash engine))
 (use-modules (gnucash utilities))
 (use-modules (gnucash core-utils))
 (use-modules (gnucash app-utils))
 (use-modules (gnucash report))
-(use-modules (fincore sankey svg))
+(use-modules (gnucash-tools sankey svg))
 
 (define reportname (N_ "Income & Expense Sankey"))
 

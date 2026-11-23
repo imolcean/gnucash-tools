@@ -1,9 +1,9 @@
 name: gnucash-togo image
 
 # Tests the repository and publishes the gnucash-togo Docker image to GitHub Container Registry:
-#   ghcr.io/<owner>/fincore-gnucash-togo:latest      (every push to master)
-#   ghcr.io/<owner>/fincore-gnucash-togo:sha-<short> (every push to master)
-#   ghcr.io/<owner>/fincore-gnucash-togo:1.2.3       (tag gnucash-togo/v1.2.3)
+#   ghcr.io/<owner>/gnucash-togo:latest      (every push to master)
+#   ghcr.io/<owner>/gnucash-togo:sha-<short> (every push to master)
+#   ghcr.io/<owner>/gnucash-togo:1.2.3       (tag gnucash-togo/v1.2.3)
 
 on:
   push:
@@ -59,7 +59,7 @@ jobs:
       - id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/${{ github.repository_owner }}/fincore-gnucash-togo
+          images: ghcr.io/${{ github.repository_owner }}/gnucash-togo
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,enable={{is_default_branch}}

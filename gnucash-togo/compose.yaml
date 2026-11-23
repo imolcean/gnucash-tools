@@ -37,7 +37,7 @@ services:
 
   app:
     # latest = the newest green build of master; every start pulls it.
-    image: ghcr.io/imolcean/fincore-gnucash-togo:latest
+    image: ghcr.io/imolcean/gnucash-togo:latest
     pull_policy: always
     restart: unless-stopped
     depends_on:

@@ -35,7 +35,7 @@ services:
 
 3. Start it. Open `http://<server>:8302` on the phone, log in, and add it to the home screen.
 
-The image is published to `ghcr.io/imolcean/fincore-gnucash-togo`. If the package is private, log the server in
+The image is published to `ghcr.io/imolcean/gnucash-togo`. If the package is private, log the server in
 once with `docker login ghcr.io` and a token that can read packages.
 
 The compose file uses `latest`, the newest build of `master` that passed the tests, and pulls it on every start.

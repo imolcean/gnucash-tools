@@ -8,8 +8,8 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
         <fileSet>
-            <directory>src/main/scheme/fincore-reports</directory>
-            <outputDirectory>fincore-reports</outputDirectory>
+            <directory>src/main/scheme/gnucash-tools-reports</directory>
+            <outputDirectory>gnucash-tools-reports</outputDirectory>
             <lineEnding>unix</lineEnding>
         </fileSet>
     </fileSets>

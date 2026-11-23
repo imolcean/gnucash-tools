@@ -20,7 +20,7 @@
 ;; The source is ASCII only; other characters are written as \u escapes so that no reader has to guess the
 ;; file's encoding.
 
-(define-module (fincore sankey svg)
+(define-module (gnucash-tools sankey svg)
   #:use-module (srfi srfi-1)
   #:export (sankey-svg
             sankey-layout

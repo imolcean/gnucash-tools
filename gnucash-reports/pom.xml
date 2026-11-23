@@ -18,7 +18,7 @@
              and published by .github/workflows/gnucash-reports-image.yml, which reads the name from here. The tag
              is the GnuCash version and a revision of the Dockerfile; raise the revision with every change to the
              Dockerfile, because the screenshot baselines belong to one exact image. -->
-        <gnucash.image>ghcr.io/imolcean/fincore-gnucash-cli:5.16-1</gnucash.image>
+        <gnucash.image>ghcr.io/imolcean/gnucash-headless:5.16-1</gnucash.image>
         <!-- -Dsankey.baselines.update=true rewrites src/test/resources/baselines from what the tests render. -->
         <sankey.baselines.update>false</sankey.baselines.update>
         <!-- Where -Pinstall-desktop copies the reports: GnuCash's user data folder. -->
@@ -73,7 +73,7 @@
     </dependencies>
 
     <build>
-        <!-- The reports are the module's "classes": the jar and the tests' classpath carry fincore-reports/. -->
+        <!-- The reports are the module's "classes": the jar and the tests' classpath carry gnucash-tools-reports/. -->
         <resources>
             <resource>
                 <directory>src/main/scheme</directory>
@@ -93,7 +93,7 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
-            <!-- What a user installs: gnucash-reports-<version>.zip holding the fincore-reports folder. -->
+            <!-- What a user installs: gnucash-reports-<version>.zip holding the gnucash-tools-reports folder. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -119,7 +119,7 @@
 
     <profiles>
         <!-- ./mvnw -pl gnucash-reports -am install -Pinstall-desktop
-             Copies fincore-reports/ into GnuCash's user data folder, in the install phase: it makes the build
+             Copies gnucash-tools-reports/ into GnuCash's user data folder, in the install phase: it makes the build
              usable on this machine, which is what install is for. It never touches config-user.scm: the line
              that loads the reports is added by hand, once (README.md). -->
         <profile>
@@ -137,11 +137,11 @@
                                     <goal>copy-resources</goal>
                                 </goals>
                                 <configuration>
-                                    <outputDirectory>${gnucash.userdata}/fincore-reports</outputDirectory>
+                                    <outputDirectory>${gnucash.userdata}/gnucash-tools-reports</outputDirectory>
                                     <overwrite>true</overwrite>
                                     <resources>
                                         <resource>
-                                            <directory>src/main/scheme/fincore-reports</directory>
+                                            <directory>src/main/scheme/gnucash-tools-reports</directory>
                                         </resource>
                                     </resources>
                                 </configuration>
