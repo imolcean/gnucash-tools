@@ -24,8 +24,8 @@ jobs:
           java-version: '25'
           cache: maven
           server-id: github
-          server-username: GITHUB_ACTOR
-          server-password: GITHUB_TOKEN
+          server-username-env-var: GITHUB_ACTOR
+          server-password-env-var: GITHUB_TOKEN
 
       - name: Set the version from the tag
         run: ./mvnw -B -q versions:set -DnewVersion="${GITHUB_REF_NAME#gnucash-book/v}" -DgenerateBackupPoms=false
