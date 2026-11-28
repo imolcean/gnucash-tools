@@ -14,11 +14,8 @@
     <description>Adapter for the GnuCash SQL book</description>
 
     <dependencies>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jdbc</artifactId>
-        </dependency>
-        <!-- The SQL uses Postgres features (row comparison, regexp_replace, ILIKE). -->
+        <!-- Plain JDBC, no Spring (ADR-0014). The SQL uses Postgres features (row comparison, regexp_replace, ILIKE,
+             = ANY of a text[]). -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>

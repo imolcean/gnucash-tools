@@ -2,7 +2,9 @@
 
 The adapter for a GnuCash 5.16 book stored in Postgres: reads the account tree, balances and registers, and writes
 two-split transactions the way GnuCash desktop does. Amounts are exact rationals (`GncNumeric`), never floating
-point (ADR-0003). The entry point is `GnuCashBook`, built from a `DataSource` and a `Clock`. Terms: `GLOSSARY.md`.
+point (ADR-0003). The entry point is `GnuCashBook`, built from a `DataSource` and a `Clock`. Plain JDBC: the only
+runtime dependency is the Postgres driver, no Spring (ADR-0014). Database failures are `BookAccessException`.
+Terms: `GLOSSARY.md`.
 
 ## Using it from another repository
 
@@ -32,9 +34,10 @@ dependency versions, so nothing else is fetched from this repository. MIT licenc
 ### Tests against the sample book
 
 The test-jar carries `SampleBook`: a Postgres 17 container (Testcontainers, so Docker must be running) loaded with a
-small book written by GnuCash 5.16, with `freshCopy()` for a private database per test and the account GUIDs as
-constants. It needs the main jar, the Postgres driver and Testcontainers next to it (versions left out as for a
-project on Spring Boot's dependency management; anything else sets them):
+small book written by GnuCash 5.16, with `freshCopy()` for a private database per test, `unlocked(dataSource)` for a
+book without desktop's lock row, and the GUIDs of its accounts (root and trading tree included) and of its EUR and
+USD commodities as constants. It needs the main jar, the Postgres driver and Testcontainers next to it, no Spring
+(versions left out as for a project on Spring Boot's dependency management; anything else sets them):
 
 ```xml
 <dependency>

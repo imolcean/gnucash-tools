@@ -11,7 +11,7 @@ The repo held one Spring Boot module with fincore's domain code. gnucash-togo ne
 The root `pom.xml` becomes an aggregator (`packaging=pom`, parent `spring-boot-starter-parent` 4.1.2). Modules:
 
 - **fincore-core**: plain library with the fincore domain (jMolecules, no Spring Boot app, no persistence).
-- **gnucash-book**: the GnuCash adapter library. Depends on `spring-jdbc` only, uses `JdbcClient` (no JPA), and takes a `DataSource` from its caller.
+- **gnucash-book**: the GnuCash adapter library. Depends on `spring-jdbc` only, uses `JdbcClient` (no JPA), and takes a `DataSource` from its caller. (Since 0.2.0 plain JDBC without Spring: ADR-0014.)
 - **gnucash-togo**: the phone app (Spring Boot web). Depends on gnucash-book, not on fincore-core (ADR-0001).
 - **gnucash-import** (later): GnuCash → fincore importer, a port of the 1C project's ADR-0023 split mapping. Depends on gnucash-book and fincore-core.
 

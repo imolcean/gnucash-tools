@@ -12,7 +12,10 @@ import java.util.Set;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
 
-/** ADR-0003: amounts are exact rationals, so floating point has no place in the book's API or state. */
+/**
+ * ADR-0003: amounts are exact rationals, so floating point has no place in the book's API or state. ADR-0014: the
+ * book is plain JDBC, so a consumer needs no Spring.
+ */
 @AnalyzeClasses(packages = "org.duckdns.gory26.gnucash.book", importOptions = ImportOption.DoNotIncludeTests.class)
 @SuppressWarnings("unused") // @ArchTest fields are read by ArchUnit through reflection
 class ArchitectureTests {
@@ -34,4 +37,7 @@ class ArchitectureTests {
 
     @ArchTest
     ArchRule noFloatingPointParameters = noCodeUnits().should().haveRawParameterTypes(ANY_FLOATING_POINT);
+
+    @ArchTest
+    ArchRule noSpring = noClasses().should().dependOnClassesThat().resideInAPackage("org.springframework..");
 }

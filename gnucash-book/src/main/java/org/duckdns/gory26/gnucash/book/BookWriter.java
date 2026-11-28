@@ -1,7 +1,5 @@
 package org.duckdns.gory26.gnucash.book;
 
-import org.springframework.jdbc.core.simple.JdbcClient;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -21,9 +19,9 @@ final class BookWriter {
     /** Desktop writes the epoch, not NULL, into unused timestamp columns. */
     static final LocalDateTime EPOCH = LocalDateTime.of(1970, 1, 1, 0, 0);
 
-    private final JdbcClient jdbc;
+    private final Jdbc jdbc;
 
-    BookWriter(JdbcClient jdbc) {
+    BookWriter(Jdbc jdbc) {
         this.jdbc = jdbc;
     }
 
@@ -33,17 +31,10 @@ final class BookWriter {
 
     void insert(String txGuid, TransferDraft draft, Commodity currency, LocalDateTime enterDate) {
         Transaction tx = draft.toTransaction();
-        jdbc.sql("""
-                        INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)
-                        VALUES (:guid, :currency, '', :post, :enter, :description)""")
-                .param("guid", txGuid)
-                .param("currency", currency.guid())
-                .param("post", tx.postDate().atTime(NEUTRAL_TIME))
-                .param("enter", enterDate)
-                .param("description", tx.description())
-                .update();
+        insertTransactionRow(txGuid, currency.guid(), tx.postDate(), enterDate, tx.description());
         for(Split split : tx.splits()) {
-            insertSplit(newGuid(), txGuid, split, currency.fraction());
+            insertSplit(newGuid(), txGuid, split.accountGuid(),
+                    split.value().toFraction(currency.fraction()), split.quantity().toFraction(currency.fraction()));
         }
         insertDatePosted(txGuid, tx.postDate());
         insertNotes(txGuid, tx.notes());
@@ -52,14 +43,8 @@ final class BookWriter {
     /** Rewrites a two-split transfer in place, keeping its GUIDs, enter date and reconcile states. */
     void update(String txGuid, List<SplitRow> existing, TransferDraft draft, Commodity currency) {
         Transaction tx = draft.toTransaction();
-        jdbc.sql("""
-                        UPDATE transactions SET currency_guid = :currency, post_date = :post, description = :description
-                        WHERE guid = :guid""")
-                .param("guid", txGuid)
-                .param("currency", currency.guid())
-                .param("post", tx.postDate().atTime(NEUTRAL_TIME))
-                .param("description", tx.description())
-                .update();
+        jdbc.update("UPDATE transactions SET currency_guid = ?, post_date = ?, description = ? WHERE guid = ?",
+                currency.guid(), tx.postDate().atTime(NEUTRAL_TIME), tx.description(), txGuid);
 
         // toTransaction() lists the incoming (+) split first; match it to the old incoming split
         SplitRow oldIn = existing.get(0).value().signum() > 0 ? existing.get(0) : existing.get(1);
@@ -67,14 +52,12 @@ final class BookWriter {
         updateSplit(oldIn.guid(), tx.splits().get(0), currency.fraction());
         updateSplit(oldOut.guid(), tx.splits().get(1), currency.fraction());
 
-        int dated = jdbc.sql("UPDATE slots SET gdate_val = :date WHERE obj_guid = :tx AND name = 'date-posted'")
-                .param("date", tx.postDate())
-                .param("tx", txGuid)
-                .update();
+        int dated = jdbc.update("UPDATE slots SET gdate_val = ? WHERE obj_guid = ? AND name = 'date-posted'",
+                tx.postDate(), txGuid);
         if(dated == 0) {
             insertDatePosted(txGuid, tx.postDate());
         }
-        jdbc.sql("DELETE FROM slots WHERE obj_guid = :tx AND name = 'notes'").param("tx", txGuid).update();
+        jdbc.update("DELETE FROM slots WHERE obj_guid = ? AND name = 'notes'", txGuid);
         insertNotes(txGuid, tx.notes());
     }
 
@@ -83,69 +66,56 @@ final class BookWriter {
         List<String> owners = new ArrayList<>();
         owners.add(txGuid);
         splits.forEach(s -> owners.add(s.guid()));
-        jdbc.sql("DELETE FROM slots WHERE obj_guid IN (:owners)").param("owners", owners).update();
-        jdbc.sql("DELETE FROM splits WHERE tx_guid = :tx").param("tx", txGuid).update();
-        jdbc.sql("DELETE FROM transactions WHERE guid = :tx").param("tx", txGuid).update();
+        jdbc.update("DELETE FROM slots WHERE obj_guid = ANY(?)", owners);
+        jdbc.update("DELETE FROM splits WHERE tx_guid = ?", txGuid);
+        jdbc.update("DELETE FROM transactions WHERE guid = ?", txGuid);
     }
 
-    private void insertSplit(String guid, String txGuid, Split split, long fraction) {
-        GncNumeric value = split.value().toFraction(fraction);
-        GncNumeric quantity = split.quantity().toFraction(fraction);
-        jdbc.sql("""
+    private void insertTransactionRow(String guid, String currencyGuid, LocalDate postDate, LocalDateTime enterDate,
+                                      String description) {
+        jdbc.update("""
+                        INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)
+                        VALUES (?, ?, '', ?, ?, ?)""",
+                guid, currencyGuid, postDate.atTime(NEUTRAL_TIME), enterDate, description);
+    }
+
+    private void insertSplit(String guid, String txGuid, String accountGuid, GncNumeric value, GncNumeric quantity) {
+        jdbc.update("""
                         INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date,
                                             value_num, value_denom, quantity_num, quantity_denom, lot_guid)
-                        VALUES (:guid, :tx, :account, '', '', 'n', :epoch,
-                                :valueNum, :valueDenom, :quantityNum, :quantityDenom, NULL)""")
-                .param("guid", guid)
-                .param("tx", txGuid)
-                .param("account", split.accountGuid())
-                .param("epoch", EPOCH)
-                .param("valueNum", value.num())
-                .param("valueDenom", value.denom())
-                .param("quantityNum", quantity.num())
-                .param("quantityDenom", quantity.denom())
-                .update();
+                        VALUES (?, ?, ?, '', '', 'n', ?, ?, ?, ?, ?, NULL)""",
+                guid, txGuid, accountGuid, EPOCH, value.num(), value.denom(), quantity.num(), quantity.denom());
     }
 
     private void updateSplit(String guid, Split split, long fraction) {
         GncNumeric value = split.value().toFraction(fraction);
         GncNumeric quantity = split.quantity().toFraction(fraction);
-        jdbc.sql("""
-                        UPDATE splits SET account_guid = :account,
-                                          value_num = :valueNum, value_denom = :valueDenom,
-                                          quantity_num = :quantityNum, quantity_denom = :quantityDenom
-                        WHERE guid = :guid""")
-                .param("guid", guid)
-                .param("account", split.accountGuid())
-                .param("valueNum", value.num())
-                .param("valueDenom", value.denom())
-                .param("quantityNum", quantity.num())
-                .param("quantityDenom", quantity.denom())
-                .update();
+        jdbc.update("""
+                        UPDATE splits SET account_guid = ?, value_num = ?, value_denom = ?, quantity_num = ?, quantity_denom = ?
+                        WHERE guid = ?""",
+                split.accountGuid(), value.num(), value.denom(), quantity.num(), quantity.denom(), guid);
     }
 
     private void insertDatePosted(String txGuid, LocalDate date) {
-        jdbc.sql("""
+        jdbc.update("""
                         INSERT INTO slots (obj_guid, name, slot_type, int64_val, string_val, double_val, timespec_val,
                                            guid_val, numeric_val_num, numeric_val_denom, gdate_val)
-                        VALUES (:tx, 'date-posted', 10, 0, NULL, NULL, :epoch, NULL, 0, 1, :date)""")
-                .param("tx", txGuid)
-                .param("epoch", EPOCH)
-                .param("date", date)
-                .update();
+                        VALUES (?, 'date-posted', 10, 0, NULL, NULL, ?, NULL, 0, 1, ?)""",
+                txGuid, EPOCH, date);
     }
 
     private void insertNotes(String txGuid, String notes) {
-        if(notes.isBlank()) {
-            return;
+        if(!notes.isBlank()) {
+            insertStringSlot(txGuid, "notes", notes);
         }
-        jdbc.sql("""
+    }
+
+    /** A {@code slot_type = 4} slot, shaped like desktop's {@code notes} slot. */
+    private void insertStringSlot(String owner, String name, String value) {
+        jdbc.update("""
                         INSERT INTO slots (obj_guid, name, slot_type, int64_val, string_val, double_val, timespec_val,
                                            guid_val, numeric_val_num, numeric_val_denom, gdate_val)
-                        VALUES (:tx, 'notes', 4, 0, :notes, NULL, :epoch, NULL, 0, 1, NULL)""")
-                .param("tx", txGuid)
-                .param("notes", notes)
-                .param("epoch", EPOCH)
-                .update();
+                        VALUES (?, ?, 4, 0, ?, NULL, ?, NULL, 0, 1, NULL)""",
+                owner, name, value, EPOCH);
     }
 }

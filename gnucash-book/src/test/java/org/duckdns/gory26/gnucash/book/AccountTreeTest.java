@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.springframework.jdbc.core.simple.JdbcClient;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
@@ -22,7 +21,7 @@ class AccountTreeTest {
 
     private final DataSource db = SampleBook.freshCopy();
     private final GnuCashBook book = new GnuCashBook(db, SampleBook.TODAY);
-    private final JdbcClient sql = JdbcClient.create(db);
+    private final Sql sql = new Sql(db);
 
     private static BigDecimal total(List<AccountNode> tree, String path) {
         return find(tree, path).displayTotal().map(GncNumeric::toBigDecimal).orElseThrow();
@@ -124,7 +123,7 @@ class AccountTreeTest {
 
     @Test
     void aHiddenAccountStillCountsInItsParentsTotal() {
-        sql.sql("UPDATE accounts SET hidden = 1 WHERE guid = :cash").param("cash", SampleBook.CASH).update();
+        sql.update("UPDATE accounts SET hidden = 1 WHERE guid = ?", SampleBook.CASH);
 
         List<AccountNode> tree = book.accountTree(DUMP_DAY);
 
@@ -147,10 +146,10 @@ class AccountTreeTest {
 
     @Test
     void anOlderPriceIsIgnored() {
-        sql.sql("""
-                        INSERT INTO prices VALUES ('00000000000000000000000000000001', :usd, :eur,
-                                                   '2026-10-01 10:59:00', 'user:price', 'last', 2, 1)""")
-                .param("usd", SampleBook.USD).param("eur", SampleBook.EUR).update();
+        sql.update("""
+                        INSERT INTO prices VALUES ('00000000000000000000000000000001', ?, ?,
+                                                   '2026-10-01 10:59:00', 'user:price', 'last', 2, 1)""",
+                SampleBook.USD, SampleBook.EUR);
         usdIntoCashUsd(1000);
 
         assertThat(total(book.accountTree(DUMP_DAY), "Assets")).isEqualTo("1598.00");
@@ -158,10 +157,10 @@ class AccountTreeTest {
 
     @Test
     void anInversePriceIsUsedWhenItIsTheOnlyOne() {
-        sql.sql("""
-                        UPDATE prices SET commodity_guid = :eur, currency_guid = :usd, value_num = 10, value_denom = 13
-                        WHERE commodity_guid = :usd AND currency_guid = :eur""")
-                .param("usd", SampleBook.USD).param("eur", SampleBook.EUR).update();
+        sql.update("""
+                        UPDATE prices SET commodity_guid = ?, currency_guid = ?, value_num = 10, value_denom = 13
+                        WHERE commodity_guid = ? AND currency_guid = ?""",
+                SampleBook.EUR, SampleBook.USD, SampleBook.USD, SampleBook.EUR);
         usdIntoCashUsd(1005);
 
         assertThat(total(book.accountTree(DUMP_DAY), "Assets")).isEqualTo("1598.06");
@@ -169,7 +168,7 @@ class AccountTreeTest {
 
     @Test
     void withoutAPriceTheParentShowsNoTotal() {
-        sql.sql("DELETE FROM prices WHERE commodity_guid = :usd").param("usd", SampleBook.USD).update();
+        sql.update("DELETE FROM prices WHERE commodity_guid = ?", SampleBook.USD);
         usdIntoCashUsd(1005);
 
         List<AccountNode> tree = book.accountTree(DUMP_DAY);
@@ -181,21 +180,18 @@ class AccountTreeTest {
 
     @Test
     void aForeignChildWithoutMoneyNeedsNoPrice() {
-        sql.sql("DELETE FROM prices WHERE commodity_guid = :usd").param("usd", SampleBook.USD).update();
+        sql.update("DELETE FROM prices WHERE commodity_guid = ?", SampleBook.USD);
 
         assertThat(total(book.accountTree(DUMP_DAY), "Assets")).isEqualTo("1585.00");
     }
 
     /** A USD-only transaction: Cash USD +cents, Trading:CURRENCY:USD −cents, dated 2026-11-04. */
     private void usdIntoCashUsd(long cents) {
-        sql.sql("INSERT INTO transactions VALUES ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', :usd, '', '2026-11-04 10:59:00', '2026-11-04 12:00:00', 'USD gift')")
-                .param("usd", SampleBook.USD).update();
+        sql.update("INSERT INTO transactions VALUES ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', ?, '', '2026-11-04 10:59:00', '2026-11-04 12:00:00', 'USD gift')",
+                SampleBook.USD);
         for(Object[] split : new Object[][]{{"b1", SampleBook.CASH_USD, cents}, {"b2", SampleBook.TRADING_USD, -cents}}) {
-            sql.sql("INSERT INTO splits VALUES (:guid, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', :account, '', '', 'n', '1970-01-01', :v, 100, :v, 100, NULL)")
-                    .param("guid", ((String) split[0]).repeat(16))
-                    .param("account", split[1])
-                    .param("v", split[2])
-                    .update();
+            sql.update("INSERT INTO splits VALUES (?, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', ?, '', '', 'n', '1970-01-01', ?, 100, ?, 100, NULL)",
+                    ((String) split[0]).repeat(16), split[1], split[2], split[2]);
         }
     }
 }

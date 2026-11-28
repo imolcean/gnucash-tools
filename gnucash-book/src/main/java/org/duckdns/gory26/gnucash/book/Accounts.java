@@ -1,7 +1,5 @@
 package org.duckdns.gory26.gnucash.book;
 
-import org.springframework.jdbc.core.simple.JdbcClient;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,13 +36,13 @@ final class Accounts {
         this.children = kids;
     }
 
-    static Accounts load(JdbcClient jdbc) {
-        String root = jdbc.sql("SELECT root_account_guid FROM books LIMIT 1").query(String.class).single();
-        List<Row> rows = jdbc.sql("""
+    static Accounts load(Jdbc jdbc) {
+        String root = jdbc.single("SELECT root_account_guid FROM books LIMIT 1", rs -> rs.getString(1));
+        List<Row> rows = jdbc.list("""
                         SELECT a.guid, a.name, a.account_type, a.parent_guid, a.code, a.hidden, a.placeholder,
                                c.guid AS c_guid, c.namespace, c.mnemonic, c.fraction
-                        FROM accounts a LEFT JOIN commodities c ON c.guid = a.commodity_guid""")
-                .query((rs, _) -> new Row(
+                        FROM accounts a LEFT JOIN commodities c ON c.guid = a.commodity_guid""",
+                rs -> new Row(
                         rs.getString("guid"),
                         rs.getString("name"),
                         AccountType.valueOf(rs.getString("account_type")),
@@ -54,8 +52,7 @@ final class Accounts {
                         rs.getInt("placeholder") != 0,
                         rs.getString("c_guid") == null ? null : new Commodity(
                                 rs.getString("c_guid"), rs.getString("namespace"),
-                                rs.getString("mnemonic"), rs.getLong("fraction"))))
-                .list();
+                                rs.getString("mnemonic"), rs.getLong("fraction"))));
         return new Accounts(root, rows);
     }
 

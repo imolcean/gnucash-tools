@@ -1,10 +1,12 @@
 package org.duckdns.gory26.gnucash.reports;
 
 import org.duckdns.gory26.gnucash.book.SampleBook;
-import org.springframework.jdbc.core.simple.JdbcClient;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -16,17 +18,12 @@ import java.util.UUID;
  */
 final class Books {
 
-    // accounts of the dump that SampleBook does not name
-    static final String INCOME = "d26dc74527ee4236af2851a31f1e5d95";
-    static final String SALARY = "3e761d35833d4eca85f77ff8d8757fc3";
-    static final String EXPENSES = "23e4811038d34013ba9be87db17ec3b5";
-
-    private final JdbcClient jdbc;
+    private final DataSource dataSource;
     private final String database;
     private int rows;
 
     private Books(DataSource dataSource) {
-        this.jdbc = JdbcClient.create(dataSource);
+        this.dataSource = dataSource;
         this.database = SampleBook.databaseOf(dataSource);
     }
 
@@ -45,10 +42,10 @@ final class Books {
      */
     static String rich() {
         Books book = new Books(SampleBook.freshCopy());
-        String interest = book.account("Interest", "INCOME", INCOME);
+        String interest = book.account("Interest", "INCOME", SampleBook.INCOME);
         String restaurants = book.account("Restaurants", "EXPENSE", SampleBook.FOOD);
         String refunds = book.account("Refunds", "EXPENSE", SampleBook.FOOD);
-        String leisure = book.account("Leisure", "EXPENSE", EXPENSES);
+        String leisure = book.account("Leisure", "EXPENSE", SampleBook.EXPENSES);
         String books = book.account("Books", "EXPENSE", leisure);
         String cinema = book.account("Cinema", "EXPENSE", leisure);
         String games = book.account("Games", "EXPENSE", leisure);
@@ -56,7 +53,7 @@ final class Books {
         LocalDate day = LocalDate.of(2026, 11, 12);
         book.transaction(day, "Interest", leg(SampleBook.CHECKING, 1250), leg(interest, -1250));
         book.transaction(day, "Bonus, part in cash",
-                leg(SampleBook.CASH, 60000), leg(SampleBook.CHECKING, 40000), leg(SALARY, -100000));
+                leg(SampleBook.CASH, 60000), leg(SampleBook.CHECKING, 40000), leg(SampleBook.SALARY, -100000));
         book.transaction(day, "Dinner, paid from two pockets",
                 leg(restaurants, 6000), leg(SampleBook.CASH, -2000), leg(SampleBook.CHECKING, -4000));
         book.transaction(day, "Deposit returned", leg(SampleBook.CASH, 1500), leg(refunds, -1500));
@@ -85,7 +82,7 @@ final class Books {
         LocalDate day = LocalDate.of(2026, 11, 12);
         String[] names = {"Phone", "Travel", "Gym", "Garden", "Pets"};
         for(int i = 0; i < names.length; i++) {
-            String account = book.account(names[i], "EXPENSE", EXPENSES);
+            String account = book.account(names[i], "EXPENSE", SampleBook.EXPENSES);
             long cents = 1500 - 100L * i;
             book.transaction(day, names[i], leg(account, cents), leg(SampleBook.CASH, -cents));
         }
@@ -101,13 +98,11 @@ final class Books {
 
     private String account(String name, String type, String parent) {
         String guid = guid();
-        jdbc.sql("""
+        update("""
                         INSERT INTO accounts (guid, name, account_type, commodity_guid, commodity_scu, non_std_scu,
                                               parent_guid, code, description, hidden, placeholder)
-                        VALUES (:guid, :name, :type, :eur, 100, 0, :parent, '', '', 0, 0)""")
-                .param("guid", guid).param("name", name).param("type", type)
-                .param("eur", SampleBook.EUR).param("parent", parent)
-                .update();
+                        VALUES (?, ?, ?, ?, 100, 0, ?, '', '', 0, 0)""",
+                guid, name, type, SampleBook.EUR, parent);
         return guid;
     }
 
@@ -120,24 +115,33 @@ final class Books {
             throw new IllegalArgumentException(description + " does not balance: " + sum);
         }
         String guid = guid();
-        jdbc.sql("""
+        update("""
                         INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)
-                        VALUES (:guid, :eur, '', CAST(:date AS date) + time '10:59:00', CAST(:date AS date) + time '12:00:00', :description)""")
-                .param("guid", guid).param("eur", SampleBook.EUR).param("date", date).param("description", description)
-                .update();
-        jdbc.sql("""
+                        VALUES (?, ?, '', CAST(? AS date) + time '10:59:00', CAST(? AS date) + time '12:00:00', ?)""",
+                guid, SampleBook.EUR, date, date, description);
+        update("""
                         INSERT INTO slots (obj_guid, name, slot_type, int64_val, timespec_val,
                                            numeric_val_num, numeric_val_denom, gdate_val)
-                        VALUES (:guid, 'date-posted', 10, 0, '1970-01-01 00:00:00', 0, 1, :date)""")
-                .param("guid", guid).param("date", date)
-                .update();
+                        VALUES (?, 'date-posted', 10, 0, '1970-01-01 00:00:00', 0, 1, ?)""",
+                guid, date);
         for(Leg leg : legs) {
-            jdbc.sql("""
+            update("""
                             INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state,
                                                 reconcile_date, value_num, value_denom, quantity_num, quantity_denom)
-                            VALUES (:guid, :tx, :account, '', '', 'n', '1970-01-01 00:00:00', :cents, 100, :cents, 100)""")
-                    .param("guid", guid()).param("tx", guid).param("account", leg.account()).param("cents", leg.cents())
-                    .update();
+                            VALUES (?, ?, ?, '', '', 'n', '1970-01-01 00:00:00', ?, 100, ?, 100)""",
+                    guid(), guid, leg.account(), leg.cents(), leg.cents());
+        }
+    }
+
+    private void update(String sql, Object... params) {
+        try(Connection c = dataSource.getConnection(); PreparedStatement statement = c.prepareStatement(sql)) {
+            for(int i = 0; i < params.length; i++) {
+                statement.setObject(i + 1, params[i]);
+            }
+            statement.executeUpdate();
+        }
+        catch(SQLException e) {
+            throw new IllegalStateException(sql, e);
         }
     }
 

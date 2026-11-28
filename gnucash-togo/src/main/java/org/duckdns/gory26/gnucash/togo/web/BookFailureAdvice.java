@@ -2,26 +2,25 @@ package org.duckdns.gory26.gnucash.togo.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.duckdns.gory26.gnucash.book.BookAccessException;
 import org.duckdns.gory26.gnucash.togo.session.BookFailure;
 import org.duckdns.gory26.gnucash.togo.session.SessionCloser;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.NestedExceptionUtils;
-import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.transaction.TransactionException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
  * When a session's pool can't get a connection. A book that is down shows a banner and keeps the page as it
- * was, so a Save can be tapped again; a login the book now refuses (its password changed) logs out. Reads fail
- * as {@link DataAccessException}, writes inside a transaction as {@link TransactionException}.
+ * was, so a Save can be tapped again; a login the book now refuses (its password changed) logs out. The book
+ * reports both, reads and writes, as {@link BookAccessException} with the {@code SQLException} as its cause.
  */
 @ControllerAdvice
 class BookFailureAdvice {
@@ -36,7 +35,7 @@ class BookFailureAdvice {
         this.closer = closer;
     }
 
-    @ExceptionHandler({DataAccessException.class, TransactionException.class})
+    @ExceptionHandler(BookAccessException.class)
     @Nullable ModelAndView bookFailed(Exception e, HttpServletRequest request, HttpServletResponse response) throws Exception {
         BookFailure failure = BookFailure.of(e);
         if(failure == null) {

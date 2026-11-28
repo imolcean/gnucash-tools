@@ -2,7 +2,6 @@ package org.duckdns.gory26.gnucash.book;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.simple.JdbcClient;
 
 import javax.sql.DataSource;
 
@@ -13,7 +12,7 @@ class SchemaAndLockTest {
 
     private final DataSource db = SampleBook.freshCopy();
     private final GnuCashBook book = new GnuCashBook(db, SampleBook.TODAY);
-    private final JdbcClient sql = JdbcClient.create(db);
+    private final Sql sql = new Sql(db);
 
     @Test
     void theSampleBooksVersionsAreTheKnownSet() {
@@ -23,17 +22,17 @@ class SchemaAndLockTest {
 
     @Test
     void theApplicationVersionRowsAreIgnored() {
-        sql.sql("UPDATE versions SET table_version = 5000099 WHERE table_name = 'Gnucash'").update();
-        sql.sql("UPDATE versions SET table_version = 1 WHERE table_name = 'Gnucash-Resave'").update();
+        sql.update("UPDATE versions SET table_version = 5000099 WHERE table_name = 'Gnucash'");
+        sql.update("UPDATE versions SET table_version = 1 WHERE table_name = 'Gnucash-Resave'");
 
         assertThat(book.schemaStatus().known()).isTrue();
     }
 
     @Test
     void aChangedMissingOrExtraTableMakesTheSchemaUnknown() {
-        sql.sql("UPDATE versions SET table_version = 6 WHERE table_name = 'splits'").update();
-        sql.sql("DELETE FROM versions WHERE table_name = 'lots'").update();
-        sql.sql("INSERT INTO versions VALUES ('wormholes', 1)").update();
+        sql.update("UPDATE versions SET table_version = 6 WHERE table_name = 'splits'");
+        sql.update("DELETE FROM versions WHERE table_name = 'lots'");
+        sql.update("INSERT INTO versions VALUES ('wormholes', 1)");
 
         SchemaStatus status = book.schemaStatus();
 

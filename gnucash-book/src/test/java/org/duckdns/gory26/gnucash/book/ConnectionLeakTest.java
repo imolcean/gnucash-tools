@@ -1,18 +1,19 @@
 package org.duckdns.gory26.gnucash.book;
 
-import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.datasource.DelegatingDataSource;
 
 import javax.sql.DataSource;
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,18 +25,58 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ConnectionLeakTest {
 
     /** Counts connections handed out and not yet closed. */
-    @NullMarked
-    private static final class CountingDataSource extends DelegatingDataSource {
+    private static final class CountingDataSource implements DataSource {
 
+        private final DataSource target;
         private final AtomicInteger open = new AtomicInteger();
 
         CountingDataSource(DataSource target) {
-            super(target);
+            this.target = target;
+        }
+
+        @Override
+        public Connection getConnection(String user, String password) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public PrintWriter getLogWriter() throws SQLException {
+            return target.getLogWriter();
+        }
+
+        @Override
+        public void setLogWriter(PrintWriter out) throws SQLException {
+            target.setLogWriter(out);
+        }
+
+        @Override
+        public void setLoginTimeout(int seconds) throws SQLException {
+            target.setLoginTimeout(seconds);
+        }
+
+        @Override
+        public int getLoginTimeout() throws SQLException {
+            return target.getLoginTimeout();
+        }
+
+        @Override
+        public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+            return target.getParentLogger();
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> type) throws SQLException {
+            return target.unwrap(type);
+        }
+
+        @Override
+        public boolean isWrapperFor(Class<?> type) throws SQLException {
+            return target.isWrapperFor(type);
         }
 
         @Override
         public Connection getConnection() throws SQLException {
-            Connection connection = super.getConnection();
+            Connection connection = target.getConnection();
             open.incrementAndGet();
             return (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(), new Class<?>[]{Connection.class},
                     (_, method, args) -> {

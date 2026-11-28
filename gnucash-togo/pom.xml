@@ -79,6 +79,12 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+        <!-- The tests' own SQL; gnucash-book no longer brings Spring JDBC (ADR-0014). -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-postgresql</artifactId>

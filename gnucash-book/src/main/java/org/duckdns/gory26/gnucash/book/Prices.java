@@ -1,7 +1,5 @@
 package org.duckdns.gory26.gnucash.book;
 
-import org.springframework.jdbc.core.simple.JdbcClient;
-
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -22,16 +20,15 @@ final class Prices {
         this.latest = latest;
     }
 
-    static Prices load(JdbcClient jdbc) {
+    static Prices load(Jdbc jdbc) {
         record PriceRow(String commodity,
                         String currency,
                         LocalDateTime date,
                         GncNumeric value) {
         }
-        List<PriceRow> rows = jdbc.sql("SELECT commodity_guid, currency_guid, date, value_num, value_denom FROM prices")
-                .query((rs, _) -> new PriceRow(rs.getString(1), rs.getString(2),
-                        rs.getObject(3, LocalDateTime.class), new GncNumeric(rs.getLong(4), rs.getLong(5))))
-                .list();
+        List<PriceRow> rows = jdbc.list("SELECT commodity_guid, currency_guid, date, value_num, value_denom FROM prices",
+                rs -> new PriceRow(rs.getString(1), rs.getString(2),
+                        rs.getObject(3, LocalDateTime.class), new GncNumeric(rs.getLong(4), rs.getLong(5))));
         Map<String, Quote> latest = new HashMap<>();
         for(PriceRow p : rows) {
             if(p.value().isZero()) {
