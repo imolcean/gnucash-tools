@@ -13,9 +13,9 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
- * The GnuCash SQL book on Postgres: reads balances and registers, suggests entries, and writes two-split
- * transfers exactly as desktop 5.16 does. Plain JDBC over the given pool (ADR-0014); a database failure comes out
- * as {@link BookAccessException}.
+ * The GnuCash SQL book on Postgres: reads balances, registers and whole transactions, suggests entries, and writes
+ * two-split transfers, N-split transactions, accounts and currencies exactly as desktop 5.16 does. Plain JDBC over
+ * the given pool (ADR-0014); a database failure comes out as {@link BookAccessException}.
  */
 public final class GnuCashBook {
 
@@ -46,8 +46,15 @@ public final class GnuCashBook {
     private static final int SUGGESTIONS = 10;
     private static final int ACCOUNT_USAGE_DAYS = 90;
 
+    /** The book options' slot names, full paths below the book's {@code options} frame (ADR-0015). */
+    private static final String OPTION_TRADING = "options/Accounts/Use Trading Accounts";
+    private static final String OPTION_RED_LINE = "options/Accounts/Day Threshold for Read-Only Transactions (red line)";
+
     private static final Jdbc.RowMapper<LockHolder> LOCK_MAPPER =
             rs -> new LockHolder(rs.getString("hostname"), rs.getInt("pid"));
+
+    private static final Jdbc.RowMapper<Commodity> COMMODITY =
+            rs -> new Commodity(rs.getString(1), rs.getString(2), rs.getString(3), rs.getLong(4));
 
     private final Jdbc jdbc;
     private final Clock clock;
@@ -106,6 +113,26 @@ public final class GnuCashBook {
             return Optional.empty();
         }
         return Optional.of(summary(accounts, row));
+    }
+
+    /**
+     * The account at {@code path} below the root, e.g. {@code Expenses:Food}, hidden or not, with its own Present
+     * balance as of today; empty when there is none.
+     *
+     * @throws IllegalStateException if siblings share a name, so the path names more than one account
+     */
+    public Optional<AccountSummary> accountByPath(String path) {
+        Accounts accounts = Accounts.load(jdbc);
+        List<Accounts.Row> rows = accounts.byPath(path);
+        if(rows.size() > 1) {
+            throw new IllegalStateException(path + " names " + rows.size() + " accounts");
+        }
+        return rows.stream().findFirst().map(row -> summary(accounts, row));
+    }
+
+    /** The root of the account tree: the parent of the top-level accounts. */
+    public String rootAccountGuid() {
+        return Accounts.load(jdbc).rootGuid();
     }
 
     public RegisterPage register(String accountGuid, int limit) {
@@ -322,6 +349,116 @@ public final class GnuCashBook {
         });
     }
 
+    // ---------------------------------------------------------------- whole transactions (ADR-0015)
+
+    /**
+     * Adds an N-split transaction under the caller's GUID, with its slots, in one DB transaction. Unlike a
+     * {@link TransferDraft}, splits may mix commodities and use hidden and TRADING accounts.
+     *
+     * @throws WriteRefusedException if the book is locked or its schema unknown, the GUID is taken, the currency or an
+     *                               account is unknown, an account is a placeholder, an amount is finer than its
+     *                               fraction, or a split in the transaction's currency has value ≠ quantity
+     */
+    public void insertTransaction(NewTransaction tx) {
+        write((db, accounts) -> {
+            if(db.optional("SELECT guid FROM transactions WHERE guid = ?", rs -> rs.getString(1), tx.guid()).isPresent()) {
+                throw new WriteRefusedException(Reason.DUPLICATE_GUID, "transaction " + tx.guid() + " already exists");
+            }
+            Commodity currency = commodityByGuid(db, tx.currencyGuid())
+                    .filter(Commodity::isCurrency)
+                    .orElseThrow(() -> new WriteRefusedException(Reason.UNKNOWN_COMMODITY,
+                            "no currency " + tx.currencyGuid()));
+            List<Long> scus = new ArrayList<>();
+            for(NewSplit split : tx.splits()) {
+                scus.add(checkSplit(accounts, currency, split));
+            }
+            new BookWriter(db).insert(tx, currency, scus, now());
+            return tx.guid();
+        });
+    }
+
+    /** The transaction with all its splits and string slots; empty when there is none. */
+    public Optional<StoredTransaction> transaction(String guid) {
+        return new TransactionReader(jdbc).byGuid(guid);
+    }
+
+    /**
+     * Every transaction posted on a day from {@code from} to {@code to}, both included, ordered by date posted, then
+     * entry time; each with all its splits and string slots.
+     */
+    public List<StoredTransaction> transactions(LocalDate from, LocalDate to) {
+        if(to.isBefore(from)) {
+            throw new IllegalArgumentException("to " + to + " is before from " + from);
+        }
+        return new TransactionReader(jdbc).postedBetween(from, to);
+    }
+
+    // ---------------------------------------------------------------- accounts, currencies, options (ADR-0015)
+
+    /**
+     * Adds an account under the caller's GUID as desktop's account dialog writes it: not hidden, no code or
+     * description, the SCU from the commodity.
+     *
+     * @throws WriteRefusedException if the book is locked or its schema unknown, the GUID is taken, the parent or the
+     *                               commodity is unknown, or the parent already has a child of that name
+     */
+    public void createAccount(NewAccount account) {
+        write((db, accounts) -> {
+            if(db.optional("SELECT guid FROM accounts WHERE guid = ?", rs -> rs.getString(1), account.guid()).isPresent()) {
+                throw new WriteRefusedException(Reason.DUPLICATE_GUID, "account " + account.guid() + " already exists");
+            }
+            if(!accounts.inBook(account.parentGuid())) {
+                throw new WriteRefusedException(Reason.ACCOUNT_NOT_ALLOWED, "unknown parent account " + account.parentGuid());
+            }
+            if(accounts.children(account.parentGuid()).stream().anyMatch(c -> c.name().equals(account.name()))) {
+                String parent = accounts.path(account.parentGuid());
+                throw new WriteRefusedException(Reason.DUPLICATE_NAME,
+                        (parent.isEmpty() ? "the root" : parent) + " already has an account " + account.name());
+            }
+            Commodity commodity = commodityByGuid(db, account.commodityGuid())
+                    .orElseThrow(() -> new WriteRefusedException(Reason.UNKNOWN_COMMODITY,
+                            "no commodity " + account.commodityGuid()));
+            new BookWriter(db).insert(account, commodity);
+            return account.guid();
+        });
+    }
+
+    /** The book's currency with this ISO 4217 code, such as {@code CURRENCY:EUR}; empty when the book has none yet. */
+    public Optional<Commodity> currency(String isoCode) {
+        return currencyByCode(jdbc, isoCode);
+    }
+
+    /**
+     * The book's currency with this ISO 4217 code, added as desktop adds one when an account first uses it.
+     *
+     * @throws IllegalArgumentException if the code is not an ISO 4217 currency with a fixed fraction
+     * @throws WriteRefusedException    if it has to be added and the book is locked or its schema unknown
+     */
+    public Commodity findOrCreateCurrency(String isoCode) {
+        Currency iso = Currency.getInstance(isoCode);
+        return currency(isoCode).orElseGet(() -> write((db, _) -> {
+            // a second caller adding the same currency waits here until the first commits, then finds it
+            db.single("SELECT pg_advisory_xact_lock(hashtext('gnucash-book:currencies'))", _ -> true);
+            return currencyByCode(db, isoCode).orElseGet(() -> new BookWriter(db).insertCurrency(iso));
+        }));
+    }
+
+    /** The book options the write path needs; a missing option reads as desktop's default (off). */
+    public BookOptions bookOptions() {
+        Map<String, String> options = new HashMap<>();
+        // desktop stores the threshold as a double; it is read as an integer here (ADR-0003: no floating point)
+        jdbc.list("""
+                                SELECT name, CASE slot_type WHEN 1 THEN CAST(int64_val AS varchar)
+                                                            WHEN 2 THEN CAST(CAST(round(double_val) AS bigint) AS varchar)
+                                                            ELSE string_val END
+                                FROM slots WHERE name = ANY(?)""",
+                        rs -> Map.entry(rs.getString(1), Objects.requireNonNullElse(rs.getString(2), "")),
+                        List.of(OPTION_TRADING, OPTION_RED_LINE))
+                .forEach(e -> options.put(e.getKey(), e.getValue()));
+        String days = options.getOrDefault(OPTION_RED_LINE, "");
+        return new BookOptions("t".equals(options.get(OPTION_TRADING)), days.isEmpty() ? 0 : Integer.parseInt(days));
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private static SchemaStatus schemaStatus(Jdbc db) {
@@ -433,6 +570,33 @@ public final class GnuCashBook {
         return from;
     }
 
+    /**
+     * Checks one split of a new transaction against the book (ADR-0015).
+     *
+     * @return the account's SCU, the denominator its quantity is stored over
+     */
+    private static long checkSplit(Accounts accounts, Commodity currency, NewSplit split) {
+        Optional<String> why = accounts.whyNotPostable(split.accountGuid());
+        if(why.isPresent()) {
+            throw new WriteRefusedException(Reason.ACCOUNT_NOT_ALLOWED, why.get());
+        }
+        Accounts.Row account = accounts.get(split.accountGuid());
+        String path = accounts.path(account.guid());
+        if(!fits(split.value(), currency.fraction())) {
+            throw new WriteRefusedException(Reason.AMOUNT_TOO_PRECISE, "value " + split.value().num() + "/"
+                    + split.value().denom() + " in " + path + " is finer than " + currency.mnemonic() + " allows");
+        }
+        if(!fits(split.quantity(), account.scu())) {
+            throw new WriteRefusedException(Reason.AMOUNT_TOO_PRECISE, "quantity " + split.quantity().num() + "/"
+                    + split.quantity().denom() + " is finer than " + path + " allows (1/" + account.scu() + ")");
+        }
+        if(account.commodity().guid().equals(currency.guid()) && split.value().compareTo(split.quantity()) != 0) {
+            throw new WriteRefusedException(Reason.VALUE_QUANTITY_MISMATCH, path + " is in the transaction's currency "
+                    + currency.mnemonic() + ", so its value and quantity must be equal");
+        }
+        return account.scu();
+    }
+
     private static boolean fits(GncNumeric amount, long fraction) {
         try {
             amount.toFraction(fraction);
@@ -502,6 +666,15 @@ public final class GnuCashBook {
     private static List<SplitRow> splitsOf(Jdbc db, String txGuid, boolean forUpdate) {
         return db.list("SELECT " + SplitRow.COLUMNS + " FROM splits s WHERE s.tx_guid = ? ORDER BY s.guid"
                 + (forUpdate ? " FOR UPDATE" : ""), SplitRow.MAPPER, txGuid);
+    }
+
+    private static Optional<Commodity> commodityByGuid(Jdbc db, String guid) {
+        return db.optional("SELECT guid, namespace, mnemonic, fraction FROM commodities WHERE guid = ?", COMMODITY, guid);
+    }
+
+    private static Optional<Commodity> currencyByCode(Jdbc db, String isoCode) {
+        return db.optional("SELECT guid, namespace, mnemonic, fraction FROM commodities "
+                + "WHERE namespace = 'CURRENCY' AND mnemonic = ?", COMMODITY, isoCode);
     }
 
     /**

@@ -64,6 +64,10 @@ _Avoid_: KVP, property
 **Notes**:
 Free text on a transaction, stored as its `notes` slot; distinct from the split `memo`.
 
+**Book option**:
+A setting of the whole book (desktop: *File > Properties*), stored as slots under the book's `options` frame, e.g. `options/Accounts/Use Trading Accounts` and the read-only day threshold (*red line*).
+_Avoid_: preference (desktop preferences live outside the book)
+
 ### Balances
 
 **Present balance**:

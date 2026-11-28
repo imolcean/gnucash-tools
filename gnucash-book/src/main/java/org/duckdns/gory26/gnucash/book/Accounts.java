@@ -13,7 +13,8 @@ final class Accounts {
                String code,
                boolean hidden,
                boolean placeholder,
-               Commodity commodity) {
+               Commodity commodity,
+               long scu) {
     }
 
     private static final Comparator<Row> DESKTOP_ORDER =
@@ -40,7 +41,7 @@ final class Accounts {
         String root = jdbc.single("SELECT root_account_guid FROM books LIMIT 1", rs -> rs.getString(1));
         List<Row> rows = jdbc.list("""
                         SELECT a.guid, a.name, a.account_type, a.parent_guid, a.code, a.hidden, a.placeholder,
-                               c.guid AS c_guid, c.namespace, c.mnemonic, c.fraction
+                               a.commodity_scu, c.guid AS c_guid, c.namespace, c.mnemonic, c.fraction
                         FROM accounts a LEFT JOIN commodities c ON c.guid = a.commodity_guid""",
                 rs -> new Row(
                         rs.getString("guid"),
@@ -52,7 +53,8 @@ final class Accounts {
                         rs.getInt("placeholder") != 0,
                         rs.getString("c_guid") == null ? null : new Commodity(
                                 rs.getString("c_guid"), rs.getString("namespace"),
-                                rs.getString("mnemonic"), rs.getLong("fraction"))));
+                                rs.getString("mnemonic"), rs.getLong("fraction")),
+                        rs.getLong("commodity_scu")));
         return new Accounts(root, rows);
     }
 
@@ -121,6 +123,41 @@ final class Accounts {
         }
         if(row.commodity() == null || !row.commodity().isCurrency()) {
             return Optional.of(path + " does not hold a currency");
+        }
+        return Optional.empty();
+    }
+
+    /** Whether the account is the book's root or below it, rather than in the scheduled-transaction template tree. */
+    boolean inBook(String guid) {
+        for(Row r = byGuid.get(guid); r != null; r = byGuid.get(r.parentGuid())) {
+            if(r.guid().equals(rootGuid)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The accounts in the book whose {@link #path} is {@code path}, hidden ones included. More than one only when
+     * siblings share a name, which desktop's account dialog does not allow.
+     */
+    List<Row> byPath(String path) {
+        return byGuid.values().stream()
+                .filter(r -> !r.guid().equals(rootGuid) && inBook(r.guid()) && path(r.guid()).equals(path))
+                .toList();
+    }
+
+    /** Why a new transaction may not have a split in this account, or empty when it may (ADR-0015). */
+    Optional<String> whyNotPostable(String guid) {
+        Row row = byGuid.get(guid);
+        if(row == null || row.type() == AccountType.ROOT || !inBook(guid)) {
+            return Optional.of("unknown account " + guid);
+        }
+        if(row.placeholder()) {
+            return Optional.of(path(guid) + " is a placeholder");
+        }
+        if(row.commodity() == null) {
+            return Optional.of(path(guid) + " has no commodity");
         }
         return Optional.empty();
     }

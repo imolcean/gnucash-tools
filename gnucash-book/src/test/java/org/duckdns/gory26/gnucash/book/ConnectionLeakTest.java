@@ -12,10 +12,12 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Every call hands its connection back. The app runs the book on a pool of two connections per session, so
@@ -111,6 +113,12 @@ class ConnectionLeakTest {
         book.suggestTags("");
         book.suggestAccounts("");
         book.draft("0".repeat(32));
+        book.transaction("0".repeat(32));
+        book.transactions(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30));
+        book.accountByPath("Expenses:Rent");
+        book.rootAccountGuid();
+        book.currency("EUR");
+        book.bookOptions();
 
         assertThat(db.open()).isZero();
     }
@@ -121,6 +129,15 @@ class ConnectionLeakTest {
         String tx = book.insert(new TransferDraft(LocalDate.of(2026, 11, 3), List.of(), "x",
                 new GncNumeric(100, 100), SampleBook.CASH, SampleBook.RENT, ""));
         book.delete(tx);
+        String guid = "1".repeat(32);
+        book.insertTransaction(new NewTransaction(guid, SampleBook.EUR, LocalDate.of(2026, 11, 3), "y", "", Map.of(),
+                List.of(new NewSplit(SampleBook.CASH, new GncNumeric(-100, 100), new GncNumeric(-100, 100)),
+                        new NewSplit(SampleBook.RENT, new GncNumeric(100, 100), new GncNumeric(100, 100)))));
+        assertThatThrownBy(() -> book.insertTransaction(new NewTransaction(guid, SampleBook.EUR, LocalDate.of(2026, 11, 3),
+                "y", "", Map.of(), List.of(new NewSplit(SampleBook.CASH, new GncNumeric(0, 100), new GncNumeric(0, 100))))))
+                .isInstanceOf(WriteRefusedException.class);
+        book.createAccount(new NewAccount("2".repeat(32), "New", SampleBook.EXPENSES, AccountType.EXPENSE, SampleBook.EUR, false));
+        book.findOrCreateCurrency("CHF");
 
         assertThat(db.open()).isZero();
     }

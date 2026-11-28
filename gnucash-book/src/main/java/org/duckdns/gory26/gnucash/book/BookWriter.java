@@ -3,13 +3,18 @@ package org.duckdns.gory26.gnucash.book;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Currency;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 /**
- * Writes {@code transactions}, {@code splits} and {@code slots} rows the way GnuCash desktop 5.16 does (ADR-0007).
- * Callers run it inside one DB transaction after the lock, schema and eligibility checks.
+ * Writes {@code transactions}, {@code splits}, {@code slots}, {@code accounts} and {@code commodities} rows the way
+ * GnuCash desktop 5.16 does (ADR-0007). Callers run it inside one DB transaction after the lock, schema and
+ * eligibility checks.
  */
 final class BookWriter {
 
@@ -33,11 +38,31 @@ final class BookWriter {
         Transaction tx = draft.toTransaction();
         insertTransactionRow(txGuid, currency.guid(), tx.postDate(), enterDate, tx.description());
         for(Split split : tx.splits()) {
-            insertSplit(newGuid(), txGuid, split.accountGuid(),
+            insertSplit(newGuid(), txGuid, split.accountGuid(), "", ReconcileState.NOT_RECONCILED, EPOCH,
                     split.value().toFraction(currency.fraction()), split.quantity().toFraction(currency.fraction()));
         }
         insertDatePosted(txGuid, tx.postDate());
         insertNotes(txGuid, tx.notes());
+    }
+
+    /**
+     * Writes an N-split transaction (ADR-0015).
+     *
+     * @param scus each split's account SCU, in split order
+     */
+    void insert(NewTransaction tx, Commodity currency, List<Long> scus, LocalDateTime enterDate) {
+        insertTransactionRow(tx.guid(), currency.guid(), tx.datePosted(), enterDate, tx.description());
+        for(int i = 0; i < tx.splits().size(); i++) {
+            NewSplit split = tx.splits().get(i);
+            String splitGuid = newGuid();
+            insertSplit(splitGuid, tx.guid(), split.accountGuid(), split.memo(), split.reconcileState(),
+                    split.reconcileDate() == null ? EPOCH : LocalDateTime.ofInstant(split.reconcileDate(), ZoneOffset.UTC),
+                    split.value().toFraction(currency.fraction()), split.quantity().toFraction(scus.get(i)));
+            insertStringSlots(splitGuid, split.slots());
+        }
+        insertDatePosted(tx.guid(), tx.datePosted());
+        insertNotes(tx.guid(), tx.notes());
+        insertStringSlots(tx.guid(), tx.slots());
     }
 
     /** Rewrites a two-split transfer in place, keeping its GUIDs, enter date and reconcile states. */
@@ -71,6 +96,42 @@ final class BookWriter {
         jdbc.update("DELETE FROM transactions WHERE guid = ?", txGuid);
     }
 
+    /** An account row as desktop's account dialog writes it, with the {@code placeholder} slot when it is one. */
+    void insert(NewAccount account, Commodity commodity) {
+        jdbc.update("""
+                        INSERT INTO accounts (guid, name, account_type, commodity_guid, commodity_scu, non_std_scu,
+                                              parent_guid, code, description, hidden, placeholder)
+                        VALUES (?, ?, ?, ?, ?, 0, ?, '', '', 0, ?)""",
+                account.guid(), account.name(), account.type().name(), commodity.guid(), commodity.fraction(),
+                account.parentGuid(), account.placeholder() ? 1 : 0);
+        if(account.placeholder()) {
+            insertStringSlot(account.guid(), "placeholder", "true");
+        }
+    }
+
+    /**
+     * An ISO 4217 currency as desktop stores one once an account uses it: its name, numeric code and fraction from
+     * the ISO table, quotes on from the {@code currency} source.
+     */
+    Commodity insertCurrency(Currency currency) {
+        int digits = currency.getDefaultFractionDigits();
+        if(digits < 0) {
+            throw new IllegalArgumentException(currency.getCurrencyCode() + " has no fixed fraction");
+        }
+        long fraction = 1;
+        for(int i = 0; i < digits; i++) {
+            fraction *= 10;
+        }
+        Commodity commodity = new Commodity(newGuid(), "CURRENCY", currency.getCurrencyCode(), fraction);
+        jdbc.update("""
+                        INSERT INTO commodities (guid, namespace, mnemonic, fullname, cusip, fraction, quote_flag,
+                                                 quote_source, quote_tz)
+                        VALUES (?, 'CURRENCY', ?, ?, ?, ?, 1, 'currency', '')""",
+                commodity.guid(), commodity.mnemonic(), currency.getDisplayName(Locale.ENGLISH),
+                currency.getNumericCodeAsString(), commodity.fraction());
+        return commodity;
+    }
+
     private void insertTransactionRow(String guid, String currencyGuid, LocalDate postDate, LocalDateTime enterDate,
                                       String description) {
         jdbc.update("""
@@ -79,12 +140,14 @@ final class BookWriter {
                 guid, currencyGuid, postDate.atTime(NEUTRAL_TIME), enterDate, description);
     }
 
-    private void insertSplit(String guid, String txGuid, String accountGuid, GncNumeric value, GncNumeric quantity) {
+    private void insertSplit(String guid, String txGuid, String accountGuid, String memo, ReconcileState state,
+                             LocalDateTime reconcileDate, GncNumeric value, GncNumeric quantity) {
         jdbc.update("""
                         INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date,
                                             value_num, value_denom, quantity_num, quantity_denom, lot_guid)
-                        VALUES (?, ?, ?, '', '', 'n', ?, ?, ?, ?, ?, NULL)""",
-                guid, txGuid, accountGuid, EPOCH, value.num(), value.denom(), quantity.num(), quantity.denom());
+                        VALUES (?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?, NULL)""",
+                guid, txGuid, accountGuid, memo, String.valueOf(state.code()), reconcileDate,
+                value.num(), value.denom(), quantity.num(), quantity.denom());
     }
 
     private void updateSplit(String guid, Split split, long fraction) {
@@ -110,7 +173,11 @@ final class BookWriter {
         }
     }
 
-    /** A {@code slot_type = 4} slot, shaped like desktop's {@code notes} slot. */
+    private void insertStringSlots(String owner, Map<String, String> slots) {
+        slots.forEach((name, value) -> insertStringSlot(owner, name, value));
+    }
+
+    /** A {@code slot_type = 4} slot, shaped like desktop's {@code notes} and {@code placeholder} slots. */
     private void insertStringSlot(String owner, String name, String value) {
         jdbc.update("""
                         INSERT INTO slots (obj_guid, name, slot_type, int64_val, string_val, double_val, timespec_val,

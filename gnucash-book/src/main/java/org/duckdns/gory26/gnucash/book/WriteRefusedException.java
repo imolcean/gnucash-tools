@@ -12,12 +12,20 @@ public class WriteRefusedException extends RuntimeException {
         NOT_FOUND,
         /** The transaction is outside what the app edits: not two splits, reconciled, mixed commodities… */
         NOT_EDITABLE,
-        /** An account that transfers may not use: placeholder, hidden, trading, not a currency, unknown. */
+        /** An account the write may not use: unknown, placeholder; for transfers also hidden, trading, not a currency. */
         ACCOUNT_NOT_ALLOWED,
         /** {@code from} and {@code to} hold different commodities; v1 is same-currency only. */
         MIXED_COMMODITIES,
         /** The amount is finer than the commodity's fraction. */
-        AMOUNT_TOO_PRECISE
+        AMOUNT_TOO_PRECISE,
+        /** The caller-chosen GUID is already used by another object of the same kind. */
+        DUPLICATE_GUID,
+        /** The parent already has a child account of that name. */
+        DUPLICATE_NAME,
+        /** No such commodity, or not a currency where one is required. */
+        UNKNOWN_COMMODITY,
+        /** A split in the transaction's own currency whose value and quantity differ. */
+        VALUE_QUANTITY_MISMATCH
     }
 
     private final Reason reason;

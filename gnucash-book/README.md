@@ -1,10 +1,43 @@
 # gnucash-book
 
-The adapter for a GnuCash 5.16 book stored in Postgres: reads the account tree, balances and registers, and writes
-two-split transactions the way GnuCash desktop does. Amounts are exact rationals (`GncNumeric`), never floating
-point (ADR-0003). The entry point is `GnuCashBook`, built from a `DataSource` and a `Clock`. Plain JDBC: the only
-runtime dependency is the Postgres driver, no Spring (ADR-0014). Database failures are `BookAccessException`.
+The adapter for a GnuCash 5.16 book stored in Postgres: reads the account tree, balances, registers and whole
+transactions, and writes transactions, accounts and currencies the way GnuCash desktop does (ADR-0007). Amounts are
+exact rationals (`GncNumeric`), never floating point (ADR-0003). The entry point is `GnuCashBook`, built from a
+`DataSource` and a `Clock`. Plain JDBC: the only runtime dependency is the Postgres driver, no Spring (ADR-0014).
 Terms: `GLOSSARY.md`.
+
+## Usage
+
+```java
+GnuCashBook book = new GnuCashBook(dataSource, Clock.systemDefaultZone());
+
+// Every write runs in one DB transaction, refused while desktop holds the lock or the schema is unknown
+// (ADR-0004, ADR-0005). Refusals are WriteRefusedException with a Reason; database failures BookAccessException.
+Commodity eur = book.findOrCreateCurrency("EUR");
+String groceries = book.accountByPath("Expenses:Food:Groceries").orElseThrow().guid();
+String cash = book.accountByPath("Assets:Cash").orElseThrow().guid();
+
+book.insertTransaction(new NewTransaction(
+        "0123456789abcdef0123456789abcdef",          // your GUID, 32 lowercase hex, not used yet
+        eur.guid(), LocalDate.of(2026, 11, 3), "Rewe", "",  // currency, date posted, description, notes
+        Map.of("source-id", "42"),                   // string slots on the transaction
+        List.of(new NewSplit(groceries, new GncNumeric(766, 100), new GncNumeric(766, 100)),
+                new NewSplit(cash, new GncNumeric(-766, 100), new GncNumeric(-766, 100), "memo",
+                        ReconcileState.CLEARED, null, Map.of()))));
+
+StoredTransaction back = book.transaction("0123456789abcdef0123456789abcdef").orElseThrow();
+List<StoredTransaction> november = book.transactions(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30));
+```
+
+- Splits may be in other commodities than the transaction's currency (value in the currency, quantity in the
+  account's commodity) and in hidden or TRADING accounts. When `bookOptions().useTradingAccounts()` is on, add the
+  trading splits yourself, as in the sample book's *Buy USD @ 1.2*. The red line
+  (`bookOptions().readOnlyThresholdDays()`) is reported, not enforced.
+- `createAccount(new NewAccount(guid, name, parentGuid, type, commodityGuid, placeholder))` adds an account;
+  `rootAccountGuid()` is the parent of the top-level ones.
+- A role with only the gnucash-togo grants (ADR-0006) cannot create accounts or currencies; that needs `INSERT` on
+  `accounts` and `commodities` too.
+- What each call checks and writes: ADR-0015.
 
 ## Using it from another repository
 
@@ -24,7 +57,7 @@ Releases are on GitHub Packages (ADR-0013). Add the repository and the dependenc
 <dependency>
     <groupId>org.duckdns.gory26</groupId>
     <artifactId>gnucash-book</artifactId>
-    <version>0.1.2</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
@@ -43,7 +76,7 @@ USD commodities as constants. It needs the main jar, the Postgres driver and Tes
 <dependency>
     <groupId>org.duckdns.gory26</groupId>
     <artifactId>gnucash-book</artifactId>
-    <version>0.1.2</version>
+    <version>0.2.0</version>
     <type>test-jar</type>
     <scope>test</scope>
 </dependency>
